@@ -1,0 +1,29 @@
+curl  -XPUT '10.3.6.7:9200/common-dtc'  -d '
+{
+
+    "common-dtc": {
+      "dynamic": true,
+      "_all": {
+        "enabled": false
+      },
+      "properties": {
+        "time": {
+          "type": date
+          "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        },
+        "device": {
+          "type": "keyword"
+        },
+        "level": {
+          "type": "keyword"
+        },
+        "hostname": {
+          "type": "keyword"
+        },
+        "msg": {
+          "type": "keyword"
+        }
+      }
+    }
+}
+'

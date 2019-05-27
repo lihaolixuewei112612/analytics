@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!-- Put site-specific property overrides in this file. -->
+<configuration>
+
+    <property>
+        <name>hdfs.event.path</name>
+        <value>/user/dtc/event/</value>
+    </property>
+    <property>
+        <!-- HDFS file pattern for MapReduce input -->
+        <name>hdfs.file.pattern</name>
+        <!--<value>.*\/Razor.*log\.lz4</value>-->
+        <value>^*.log$</value>
+    </property>
+
+    <!-- 将hdfs的数据导入到 hbase的开关-->
+    <property>
+        <name>razor.hdfs2hbase.enabled</name>
+        <value>true</value>
+    </property>
+
+    <!-- es nodes-->
+    <property>
+        <name>dtc.es.nodes</name>
+        <value>10.3.6.7:9200,10.3.6.12:9200,10.3.6.16:9200</value>
+    </property>
+    <property>
+        <name>dtc.es.cluster.name</name>
+        <value>common_test</value>
+    </property>
+    <property>
+        <name>dtc.es.indexandtype</name>
+        <value>dtc/test/</value>
+    </property>
+    <!--日志等级配置-->
+    <property>
+        <name>log.level</name>
+        <value>info</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.ip</name>
+        <value>10.3.6.7,10.3.6.12,10.3.6.17</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.port</name>
+        <value>2181</value>
+    </property>
+</configuration>
