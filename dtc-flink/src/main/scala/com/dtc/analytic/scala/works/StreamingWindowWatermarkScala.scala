@@ -4,14 +4,22 @@ import java.text.SimpleDateFormat
 import java.util.{Date, Properties}
 
 import com.dtc.analytic.scala.common.DtcConf
+import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.connectors.elasticsearch.{ElasticsearchSinkFunction, RequestIndexer}
+import org.apache.flink.streaming.connectors.elasticsearch6.ElasticsearchSink
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer09, FlinkKafkaProducer09}
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchemaWrapper
+import org.apache.http.HttpHost
+import org.codehaus.jettison.json.JSONObject
+import org.elasticsearch.action.index.IndexRequest
+import org.elasticsearch.client.Requests
+import org.mortbay.util.ajax.JSON
 
 /**
   * Created on 2019-05-27
@@ -26,6 +34,7 @@ object StreamingWindowWatermarkScala {
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env.setParallelism(1)
+   val conf = DtcConf.getConf()
 
     val topic = "t1"
     val prop = new Properties()
@@ -60,15 +69,43 @@ object StreamingWindowWatermarkScala {
     // .window(TumblingEventTimeWindows.of(Time.seconds(3))) //按照消息的EventTime分配窗口，和调用TimeWindow效果一样
 
     //.max(0).map(x=>x._1)
+    val es_host = conf.get("dtc.es.nodes")
+    if()
 
-    val topic2 = "t2"
-    val props = new Properties()
-    props.setProperty("bootstrap.servers","192.168.200.10:9092")
-    //第一种解决方案，设置FlinkKafkaProducer011里面的事务超时时间
-    //设置事务超时时间
-    //prop.setProperty("transaction.timeout.ms",60000*15+"");
+    val httpHosts = new java.util.ArrayList[HttpHost]
+    httpHosts.add(new HttpHost("127.0.0.1", 9300, "http"))
+    httpHosts.add(new HttpHost("10.2.3.1", 9300, "http"))
 
-    //第二种解决方案，设置kafka的最大事务超时时间
+   val elasticsearchSink:ElasticsearchSinkFunction[String]= new ElasticsearchSinkFunction[String] {
+      override def process(element: String, runtimeContext: RuntimeContext, requestIndexer: RequestIndexer): Unit = {
+        val json = new java.util.HashMap[String, String]
+        json.put("data", element)
+        val indexRequest: IndexRequest = Requests.indexRequest().index().`type`("_doc").source(json)
+        indexer.add(indexRequest)
+
+        return Requests.indexRequest()
+          .index("my-index")
+          .`type`("my-type")
+          .source(json)
+      }
+    }
+    val esSinkBuilder = new ElasticsearchSink.Builder[String](httpHosts,elasticsearchSink)
+
+    // configuration for the bulk requests; this instructs the sink to emit after every element, otherwise they would be buffered
+    builder.setBulkFlushMaxActions(1)
+
+    // provide a RestClientFactory for custom configuration on the internally created REST client
+    builder.setRestClientFactory(
+      restClientBuilder -> {
+        restClientBuilder.setDefaultHeaders(...)
+        restClientBuilder.setMaxRetryTimeoutMillis(...)
+        restClientBuilder.setPathPrefix(...)
+        restClientBuilder.setHttpClientConfigCallback(...)
+      }
+    )
+
+    // finally, build and add the sink to the job's pipeline
+    input.addSink(esSinkBuilder.build)
 
     //FlinkKafkaProducer011<String> myProducer = new FlinkKafkaProducer011<>(brokerList, topic, new SimpleStringSchema());
 
@@ -85,6 +122,22 @@ object StreamingWindowWatermarkScala {
     val fm = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     val time = fm.format(new Date(timestamp.toLong))
     time
+  }
+
+  def getEsSink(indexName: String): ElasticsearchSink[String] = {
+    //new接口---> 要实现一个方法
+    val esSinkFunc: ElasticsearchSinkFunction[String] = new ElasticsearchSinkFunction[String] {
+      override def process(element: String, ctx: RuntimeContext, indexer: RequestIndexer): Unit = {
+        val json = new java.util.HashMap[String, String]
+        json.put("data", element)
+        val indexRequest: IndexRequest = Requests.indexRequest().index(indexName).`type`("_doc").source(json)
+        indexer.add(indexRequest)
+      }
+    }
+    val esSinkBuilder = new ElasticsearchSink.Builder[String](hostList, esSinkFunc)
+    esSinkBuilder.setBulkFlushMaxActions(10)
+    val esSink: ElasticsearchSink[String] = esSinkBuilder.build()
+    esSink
   }
 
 
