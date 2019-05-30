@@ -21,8 +21,8 @@ public class Hourly {
     private static Logger logger = LoggerFactory.getLogger(Hourly.class);
 
     public static void main(String[] args) {
+        DtcConf.setup();
         try {
-            DtcConf.setup();
             String prevHour = Formatter.getPrevHour(); // return: yyyyMMddHH
             workID = "Hourly-" + prevHour;
             isSucc = hourlyWork(prevHour, workID);

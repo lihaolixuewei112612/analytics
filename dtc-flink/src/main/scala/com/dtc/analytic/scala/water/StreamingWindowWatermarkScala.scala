@@ -5,7 +5,7 @@ import java.util.{Date, Properties}
 
 import com.dtc.analytic.scala.common.{DtcConf, Utils}
 import com.dtc.analytic.scala.dtcexpection.DtcException
-import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.functions.{MapFunction, RuntimeContext}
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
@@ -37,17 +37,10 @@ object StreamingWindowWatermarkScala {
     env.setParallelism(1)
     val conf = DtcConf.getConf()
 
-    val topic = "t1"
-    val prop = new Properties()
-    prop.setProperty("bootstrap.servers", "192.168.200.10:9092")
-    prop.setProperty("group.id", "con1")
-    val myConsumer = new FlinkKafkaConsumer09[String](topic, new SimpleStringSchema(), prop)
-    val text = env.addSource(myConsumer)
 
-    val inputMap = text.map(line => {
-      val arr = line.split(",")
-      (arr(0), arr(1).toLong)
-    })
+    val text = env.readTextFile("conf/test.log")
+
+    var inputMap = text.map(new MyMapFunction)
 
     val waterMarkStream = inputMap.assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks[(String, Long)] {
       var currentMaxTimestamp = 0L
@@ -76,9 +69,9 @@ object StreamingWindowWatermarkScala {
       throw new DtcException("Es_Host is find!")
     }
     val host_es = es_host.split(",")
-    for(x<-host_es){
+    for (x <- host_es) {
       var ip = x.split(":")(0)
-      var host =x.split(":")(1)
+      var host = x.split(":")(1)
       httpHosts.add(new HttpHost(ip, host.toInt, "http"))
     }
 
@@ -150,5 +143,31 @@ object StreamingWindowWatermarkScala {
     esSink
   }
 
+
+
+}
+
+class MyMapFunction extends MapFunction[String, Tuple2[String,Long]] {
+  override def map(line: String): Tuple2[String,Long] = {
+    var message = ""
+    if (line.contains("$DTC$")) {
+      val splitDtc: Array[String] = line.split("\\$DTC\\$")
+      val event = splitDtc(0).split("\\$\\$").foreach(a=>a.trim)
+      message += "{" + "\"time\"" + ":" + "\"" + event(0) + "\"" + "," + "\"device\"" + ":" + "\"" + event(1) +
+        "\"" + "," + "\"" + "level" + "\"" + ":" + "\"" + event(2) + "\"" + "," + "\"" + "hostname" + "\"" + ":" +
+        "\"" + event(3) + "\"" + "," + "\"" + "message" + "\"" + ":" + "\"" + event(4) + "\""
+      var str = ""
+      for (i <- 1 until splitDtc.length) {
+        str = splitDtc(i) + "\n"
+      }
+      message += "\"" + "cause" + "\"" + ":" + "\"" + str + "\"" + "}"
+    } else {
+      val event = line.split("\\$\\$")
+      message += "{" + "\"time\"" + ":" + "\"" + event(0) + "\"" + "," + "\"device\"" + ":" + "\"" + event(1) +
+        "\"" + "," + "\"" + "level" + "\"" + ":" + "\"" + event(2) + "\"" + "," + "\"" + "hostname" + "\"" + ":" +
+        "\"" + event(3) + "\"" + "," + "\"" + "message" + "\"" + ":" + "\"" + event(4) + "\"" + "}"
+    }
+    message
+  }
 
 }

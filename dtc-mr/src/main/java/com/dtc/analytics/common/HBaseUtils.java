@@ -29,10 +29,10 @@ public class HBaseUtils {
 
     private static void init() {
         configuration = HBaseConfiguration.create();
-        configuration.set("hbase.zookeeper.property.clientPort", configuration.get("hbase.zookeeper.port"));
-        configuration.set("hbase.zookeeper.quorum", configuration.get("hbase.zookeeper.quorum"));
-//        configuration.set("hbase.zookeeper.property.clientPort", "2181");
-//        configuration.set("hbase.zookeeper.quorum", "10.3.6.7,10.3.6.12,10.3.6.16");
+//        configuration.set("hbase.zookeeper.property.clientPort", configuration.get("hbase.zookeeper.port"));
+//        configuration.set("hbase.zookeeper.quorum", configuration.get("hbase.zookeeper.quorum"));
+        configuration.set("hbase.zookeeper.property.clientPort", "2181");
+        configuration.set("hbase.zookeeper.quorum", "10.3.6.7,10.3.6.12,10.3.6.16");
         try {
             connection = ConnectionFactory.createConnection(configuration);
         } catch (IOException e) {

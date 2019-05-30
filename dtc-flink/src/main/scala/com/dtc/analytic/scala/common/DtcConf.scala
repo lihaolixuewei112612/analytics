@@ -2,6 +2,8 @@ package com.dtc.analytic.scala.common
 
 import java.io.{File, FileInputStream, FileNotFoundException, IOException, InputStream}
 import java.nio.file.Path
+
+import com.dtc.analytic.scala.dtcexpection.DtcException
 import org.slf4j.{Logger, LoggerFactory}
 import org.apache.hadoop.conf.Configuration
 
@@ -19,7 +21,7 @@ object DtcConf {
   def setup(): Unit = {
     var inputStream: InputStream = null
     try {
-//      var inputStream = new FileInputStream(new File("conf/dtc-flink.xml"))
+      //      var inputStream = new FileInputStream(new File("conf/dtc-flink.xml"))
       var inputStream = DtcConf.getClass.getClassLoader.getResourceAsStream("dtc-flink.xml")
       if (inputStream != null) {
         conf.addResource(inputStream)
@@ -29,6 +31,7 @@ object DtcConf {
     } catch {
       case ex: FileNotFoundException => {
         logger.error("Configure file not found: dtc-flink.xml,and the cause is {}.", ex)
+        throw new DtcException("dtc-flink.xml is not found!")
       }
       case ex: IOException => {
         logger.error("Configure file not found: dtc-flink.xml,and the cause is {}.", ex)

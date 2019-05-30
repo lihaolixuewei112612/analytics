@@ -28,7 +28,7 @@
     <!-- es nodes-->
     <property>
         <name>dtc.es.nodes</name>
-        <value>10.3.6.7:9200,10.3.6.12:9200,10.3.6.16:9200</value>
+        <value>10.3.6.7:9300,10.3.6.12:9300,10.3.6.16:9300</value>
     </property>
     <property>
         <name>dtc.es.cluster.name</name>

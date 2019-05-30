@@ -2,7 +2,7 @@
  * Copyright 2017 Suning Inc.
  * Created by Yan Jian on 2017/01/03.
  */
-package com.dtc.analytics.error;
+package com.dtc.analytics.dtcexcepiton;
 
 public class DtcException extends RuntimeException {
 
