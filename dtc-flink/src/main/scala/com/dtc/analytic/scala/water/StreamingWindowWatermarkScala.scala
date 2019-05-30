@@ -46,7 +46,7 @@ object StreamingWindowWatermarkScala {
       var currentMaxTimestamp = 0L
       var maxOutOfOrderness = 10000L // 最大允许的乱序时间是10s
 
-      val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+      val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
       override def getCurrentWatermark = new Watermark(currentMaxTimestamp - maxOutOfOrderness)
 
@@ -144,30 +144,31 @@ object StreamingWindowWatermarkScala {
   }
 
 
-
 }
 
-class MyMapFunction extends MapFunction[String, Tuple2[String,Long]] {
-  override def map(line: String): Tuple2[String,Long] = {
+class MyMapFunction extends MapFunction[String, Tuple2[String, Long]] {
+  override def map(line: String): Tuple2[String, Long] = {
     var message = ""
     if (line.contains("$DTC$")) {
       val splitDtc: Array[String] = line.split("\\$DTC\\$")
-      val event = splitDtc(0).split("\\$\\$").foreach(a=>a.trim)
-      message += "{" + "\"time\"" + ":" + "\"" + event(0) + "\"" + "," + "\"device\"" + ":" + "\"" + event(1) +
-        "\"" + "," + "\"" + "level" + "\"" + ":" + "\"" + event(2) + "\"" + "," + "\"" + "hostname" + "\"" + ":" +
-        "\"" + event(3) + "\"" + "," + "\"" + "message" + "\"" + ":" + "\"" + event(4) + "\""
+      val event = splitDtc(0).split("\\$\\$")
+      message += "{" + "\"time\"" + ":" + "\"" + event(0).trim + "\"" + "," + "\"device\"" + ":" + "\"" + event(1).trim +
+        "\"" + "," + "\"" + "level" + "\"" + ":" + "\"" + event(2).trim + "\"" + "," + "\"" + "hostname" + "\"" + ":" +
+        "\"" + event(3).trim + "\"" + "," + "\"" + "message" + "\"" + ":" + "\"" + event(4).trim + "\""
       var str = ""
       for (i <- 1 until splitDtc.length) {
-        str = splitDtc(i) + "\n"
+        str = splitDtc(i).trim + "\n"
       }
-      message += "\"" + "cause" + "\"" + ":" + "\"" + str + "\"" + "}"
+      message += "\"" + "cause" + "\"" + ":" + "\"" + str.trim + "\"" + "}"
+      return (message, event(0).replace("T", " ").split("+")(0).toLong)
     } else {
       val event = line.split("\\$\\$")
-      message += "{" + "\"time\"" + ":" + "\"" + event(0) + "\"" + "," + "\"device\"" + ":" + "\"" + event(1) +
-        "\"" + "," + "\"" + "level" + "\"" + ":" + "\"" + event(2) + "\"" + "," + "\"" + "hostname" + "\"" + ":" +
-        "\"" + event(3) + "\"" + "," + "\"" + "message" + "\"" + ":" + "\"" + event(4) + "\"" + "}"
+      message += "{" + "\"time\"" + ":" + "\"" + event(0).trim + "\"" + "," + "\"device\"" + ":" + "\"" + event(1).trim +
+        "\"" + "," + "\"" + "level" + "\"" + ":" + "\"" + event(2).trim + "\"" + "," + "\"" + "hostname" + "\"" + ":" +
+        "\"" + event(3).trim + "\"" + "," + "\"" + "message" + "\"" + ":" + "\"" + event(4).trim + "\"" + "}"
+      return (message, event(0).replace("T", " ").split("+")(0).toLong)
     }
-    message
+
   }
 
 }
