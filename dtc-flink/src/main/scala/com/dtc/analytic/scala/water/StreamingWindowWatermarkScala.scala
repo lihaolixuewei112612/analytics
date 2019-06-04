@@ -21,6 +21,7 @@ import org.apache.http.HttpHost
 import org.codehaus.jettison.json.JSONObject
 import org.elasticsearch.action.index.IndexRequest
 import org.elasticsearch.client.Requests
+import org.elasticsearch.common.xcontent.XContentType
 import org.mortbay.util.ajax.JSON
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -146,51 +147,49 @@ object StreamingWindowWatermarkScala {
     //
     //    }
 
-    val httpHosts = new java.util.ArrayList[HttpHost]
-    val es_host = conf.get("dtc.es.nodes")
-    if (Utils.isEmpty(es_host)) {
-      throw new DtcException("Es_Host is null!")
-    }
-    val host_es = es_host.split(",")
-    for (x <- host_es) {
-      var ip = x.split(":")(0)
-      var host = x.split(":")(1)
-      httpHosts.add(new HttpHost(ip, host.toInt, "http"))
-    }
-
-    val es_index = conf.get("dtc.es.flink.index.name")
-    val es_type = conf.get("dtc.es.flink.type.name")
-    if (Utils.isEmpty(es_index) || Utils.isEmpty(es_type)) {
-      throw new DtcException("Es_index or type is null!")
-    }
-
-    //
-    //
-    def getEsSink(indexName: String, indexType: String): ElasticsearchSink[String] = {
-      //new接口---> 要实现一个方法
-      val esSinkFunc: ElasticsearchSinkFunction[String] = new ElasticsearchSinkFunction[String] {
-        def createIndexRequest(element: String): IndexRequest = {
-          println("------------------------asdgdfsasdfasdfasfdas" + element)
-          return Requests.indexRequest()
-            .index(indexName)
-            .`type`(indexType)
-            .source(element)
+        val httpHosts = new java.util.ArrayList[HttpHost]
+        val es_host = conf.get("dtc.es.nodes")
+        if (Utils.isEmpty(es_host)) {
+          throw new DtcException("Es_Host is null!")
+        }
+        val host_es = es_host.split(",")
+        for (x <- host_es) {
+          var ip = x.split(":")(0)
+          var host = x.split(":")(1)
+          httpHosts.add(new HttpHost(ip, host.toInt, "http"))
         }
 
-        override def process(element: String, ctx: RuntimeContext, indexer: RequestIndexer): Unit = {
-          println("$$$$$$$$$$$$$$$$$-----------------------------:   " + element)
-          //          val indexRequest: IndexRequest = Requests.indexRequest().index(indexName).`type`(indexType).source(element)
-          //                  indexer.add(indexRequest)
-          indexer.add(createIndexRequest(element))
+        val es_index = conf.get("dtc.es.flink.index.name")
+        val es_type = conf.get("dtc.es.flink.type.name")
+        if (Utils.isEmpty(es_index) || Utils.isEmpty(es_type)) {
+          throw new DtcException("Es_index or type is null!")
         }
-      }
-      val esSinkBuilder = new ElasticsearchSink.Builder[String](httpHosts, esSinkFunc)
-      esSinkBuilder.setBulkFlushMaxActions(10)
-      val esSink: ElasticsearchSink[String] = esSinkBuilder.build()
-      esSink
-    }
+    //
+    //
+        def getEsSink(indexName: String, indexType: String): ElasticsearchSink[String] = {
+          //new接口---> 要实现一个方法
+          val esSinkFunc: ElasticsearchSinkFunction[String] = new ElasticsearchSinkFunction[String] {
+            def createIndexRequest(element: String): IndexRequest = {
+              println("------------------------asdgdfsasdfasdfasfdas" + element)
+              return Requests.indexRequest()
+                .index(indexName)
+                .`type`(indexType)
+                .source(element,XContentType.JSON)
+            }
 
-    val esSink = getEsSink(es_index, es_type)
+            override def process(element: String, ctx: RuntimeContext, indexer: RequestIndexer): Unit = {
+    //          val indexRequest: IndexRequest = Requests.indexRequest().index(indexName).`type`(indexType).source(element)
+              //                  indexer.add(indexRequest)
+              indexer.add(createIndexRequest(element))
+            }
+          }
+          val esSinkBuilder = new ElasticsearchSink.Builder[String](httpHosts, esSinkFunc)
+          esSinkBuilder.setBulkFlushMaxActions(10)
+          val esSink: ElasticsearchSink[String] = esSinkBuilder.build()
+          esSink
+        }
+
+        val esSink = getEsSink(es_index, es_type)
     //            val elasticsearchSink: ElasticsearchSinkFunction[String] = new ElasticsearchSinkFunction[String] {
     //              override def process(element: String, runtimeContext: RuntimeContext, requestIndexer: RequestIndexer): Unit = {
     //                val json = new java.util.HashMap[String, String]
@@ -231,7 +230,7 @@ object StreamingWindowWatermarkScala {
     //    //使用支持仅一次语义的形式
     //    val myProducer = new FlinkKafkaProducer09[String](topic2, new KeyedSerializationSchemaWrapper[String](new SimpleStringSchema()), props, FlinkKafkaProducer09.Semantic.EXACTLY_ONCE)
     //
-    window.addSink(esSink)
+        window.addSink(esSink)
     env.execute("StreamingWindowWatermarkScala")
 
   }
@@ -307,41 +306,10 @@ class MyMapFunction extends MapFunction[String, Tuple2[String, Long]] {
   //  }
 
 
-}
 
 
-class MyMapFunction2 extends MapFunction[String, Tuple2[java.util.HashMap[String, String], Long]] {
-  override def map(line: String): Tuple2[java.util.HashMap[String, String], Long] = {
-    val json = new java.util.HashMap[String, String]
-    if (line.contains("$DTC$")) {
-      val splitDtc: Array[String] = line.split("\\$DTC\\$")
-      val event = splitDtc(0).split("\\$\\$")
-      json.put("time", event(0).trim)
-      json.put("device", event(1).trim)
-      json.put("level", event(2).trim)
-      json.put("hostname", event(3).trim)
-      json.put("message", event(4).trim)
-      var str = ""
-      for (i <- 1 until splitDtc.length) {
-        str = splitDtc(i).trim + "\n"
-      }
-      json.put("cause", str.trim)
-      var time1 = event(0).replace("T", " ").split("\\+")(0).replace("-", "/")
-      var time2 = new Date(time1).getTime
-      return (json, time2)
-    } else {
-      val event = line.split("\\$\\$")
-      json.put("time", event(0).trim)
-      json.put("device", event(1).trim)
-      json.put("level", event(2).trim)
-      json.put("hostname", event(3).trim)
-      json.put("message", event(4).trim)
-      var time1 = event(0).replace("T", " ").split("\\+")(0).replace("-", "/")
-      var time2 = new Date(time1).getTime
-      return (json, time2)
-    }
 
-  }
+
 
   //  def getEsSink(indexName: String): ElasticsearchSink[String] = {
   //    //new接口---> 要实现一个方法
