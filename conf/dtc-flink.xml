@@ -28,16 +28,21 @@
     <!-- es nodes-->
     <property>
         <name>dtc.es.nodes</name>
-        <value>10.3.6.7:9300,10.3.6.12:9300,10.3.6.16:9300</value>
+        <value>10.3.6.7:9200,10.3.6.12:9200,10.3.6.16:9200</value>
     </property>
     <property>
         <name>dtc.es.cluster.name</name>
         <value>common_test</value>
     </property>
     <property>
-        <name>dtc.es.indexandtype</name>
-        <value>dtc/test/</value>
+        <name>dtc.es.flink.index.name</name>
+        <value>flink_test</value>
     </property>
+    <property>
+        <name>dtc.es.flink.type.name</name>
+        <value>flink_test</value>
+    </property>
+
     <!--日志等级配置-->
     <property>
         <name>log.level</name>
@@ -45,7 +50,7 @@
     </property>
     <property>
         <name>hbase.zookeeper.ip</name>
-        <value>10.3.6.7,10.3.6.12,10.3.6.17</value>
+        <value>10.3.6.7,10.3.6.12,10.3.6.16</value>
     </property>
     <property>
         <name>hbase.zookeeper.port</name>

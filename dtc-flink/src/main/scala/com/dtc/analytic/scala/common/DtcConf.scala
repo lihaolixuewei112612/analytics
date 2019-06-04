@@ -21,8 +21,8 @@ object DtcConf {
   def setup(): Unit = {
     var inputStream: InputStream = null
     try {
-      //      var inputStream = new FileInputStream(new File("conf/dtc-flink.xml"))
-      var inputStream = DtcConf.getClass.getClassLoader.getResourceAsStream("dtc-flink.xml")
+      var inputStream = new FileInputStream(new File("conf/dtc-flink.xml"))
+      //      var inputStream = DtcConf.getClass.getClassLoader.getResourceAsStream("dtc-flink.xml")
       if (inputStream != null) {
         conf.addResource(inputStream)
       } else {

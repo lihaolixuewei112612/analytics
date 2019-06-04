@@ -8,7 +8,7 @@ curl  -XPUT '10.3.6.7:9200/common-dtc'  -d '
       },
       "properties": {
         "time": {
-          "type": date
+          "type": "date"
           "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
         },
         "device": {
@@ -22,6 +22,9 @@ curl  -XPUT '10.3.6.7:9200/common-dtc'  -d '
         },
         "msg": {
           "type": "keyword"
+        }
+        "cause":{
+         "type": "keyword"
         }
       }
     }

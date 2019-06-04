@@ -147,157 +147,55 @@ public class HourHdfs2EsMR extends Thread {
             String text = value.toString();
             DataStruct dataStruct = new DataStruct();
             if (lev >= 1 && lev < 2) {
-                if (text.contains("debug")) {
+                if (text.contains("info") || text.contains("debug") || text.contains("notice") || text.contains("warning")
+                        || text.contains("warn") || text.contains("err") || text.contains("crit") || text.contains("alert")
+                        || text.contains("emerg") || text.contains("panic")) {
                     String message = fetchMessage(text, dataStruct);
                     context.write(new Text(""), new Text(message));
                 }
-                if (text.contains("info")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("notice")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("warning") || text.contains("warn")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("err")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("crit")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("alert")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("emerg") || text.contains("panic")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-
             }
             if (lev >= 2 && lev < 3) {
-                if (text.contains("info")) {
+                if (text.contains("debug") || text.contains("notice") || text.contains("warning")
+                        || text.contains("warn") || text.contains("err") || text.contains("crit") || text.contains("alert")
+                        || text.contains("emerg") || text.contains("panic")) {
                     String message = fetchMessage(text, dataStruct);
                     context.write(new Text(""), new Text(message));
                 }
-                if (text.contains("notice")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("warning") || text.contains("warn")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("err")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("crit")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("alert")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("emerg") || text.contains("panic")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-
             }
             if (lev >= 3 && lev < 4) {
-                if (text.contains("notice")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("warning") || text.contains("warn")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("err")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("crit")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("alert")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("emerg") || text.contains("panic")) {
+                if (text.contains("notice") || text.contains("warning")
+                        || text.contains("warn") || text.contains("err") || text.contains("crit") || text.contains("alert")
+                        || text.contains("emerg") || text.contains("panic")) {
                     String message = fetchMessage(text, dataStruct);
                     context.write(new Text(""), new Text(message));
                 }
             }
             if (lev >= 4 && lev < 5) {
-                if (text.contains("warning") || text.contains("warn")) {
+                if (text.contains("warning")
+                        || text.contains("warn") || text.contains("err") || text.contains("crit") || text.contains("alert")
+                        || text.contains("emerg") || text.contains("panic")) {
                     String message = fetchMessage(text, dataStruct);
                     context.write(new Text(""), new Text(message));
                 }
-                if (text.contains("err")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("crit")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("alert")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("emerg") || text.contains("panic")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
+
             }
             if (lev >= 5 && lev < 6) {
-                if (text.contains("err")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("crit")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("alert")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("emerg") || text.contains("panic")) {
+                if (text.contains("err") || text.contains("crit") || text.contains("alert")
+                        || text.contains("emerg") || text.contains("panic")) {
                     String message = fetchMessage(text, dataStruct);
                     context.write(new Text(""), new Text(message));
                 }
             }
             if (lev >= 6 && lev < 7) {
-                if (text.contains("crit")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("alert")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("emerg") || text.contains("panic")) {
+                if (text.contains("crit") || text.contains("alert")
+                        || text.contains("emerg") || text.contains("panic")) {
                     String message = fetchMessage(text, dataStruct);
                     context.write(new Text(""), new Text(message));
                 }
             }
             if (lev >= 7 && lev < 8) {
-                if (text.contains("alert")) {
-                    String message = fetchMessage(text, dataStruct);
-                    context.write(new Text(""), new Text(message));
-                }
-                if (text.contains("emerg") || text.contains("panic")) {
+                if (text.contains("alert")
+                        || text.contains("emerg") || text.contains("panic")) {
                     String message = fetchMessage(text, dataStruct);
                     context.write(new Text(""), new Text(message));
                 }
