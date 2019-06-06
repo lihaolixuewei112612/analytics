@@ -44,8 +44,21 @@ object StreamingWindowWatermarkScala {
     val level = conf.get("log.level")
     val lev: Int = LevelEnum.getIndex(level)
 
-    val text = env.readTextFile("conf/test.log")
+    val brokerList = conf.get("flink.kafka.broker.list")
+    val topic = conf.get("flink.kafka.topic")
+    val groupId = conf.get("flink.kafka.groupid")
+    val prop = new Properties()
+    prop.setProperty("bootstrap.servers", brokerList)
+    prop.setProperty("group.id", groupId)
+    prop.setProperty("topic",topic)
+    val myConsumer = new FlinkKafkaConsumer09[String](topic, new SimpleStringSchema(), prop)
+    val text = env.addSource(myConsumer)
+
+    //    val text = env.readTextFile("conf/test.log")
     var inputMap = text.map(new MyMapFunction)
+
+
+
 
     val waterMarkStream = inputMap.assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks[(String, Long)] {
       var currentMaxTimestamp = 0L
@@ -64,132 +77,118 @@ object StreamingWindowWatermarkScala {
       }
     })
 
-    var window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("info") || x._1.contains("debug") ||
-      x._1.contains("notice") || x._1.contains("warning") || x._1.contains("warn") || x._1.contains("err") ||
-      x._1.contains("crit") || x._1.contains("alert") || x._1.contains("emerg") || x._1.contains("panic"))
-      .keyBy(0)
-      .timeWindow(Time.seconds(10), Time.seconds(5))
-      .sum(1)
-      .map(x => x._1)
+    //    var window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("info") || x._1.contains("debug") ||
+    //      x._1.contains("notice") || x._1.contains("warning") || x._1.contains("warn") || x._1.contains("err") ||
+    //      x._1.contains("crit") || x._1.contains("alert") || x._1.contains("emerg") || x._1.contains("panic"))
+    //      .keyBy(0)
+    //      .timeWindow(Time.seconds(10), Time.seconds(5))
+    //      .sum(1)
+    //      .map(x => x._1)
 
 
-    //    var window=
-    //    if (1 <= lev && lev < 2) {
-    //      window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("info") || x._1.contains("debug") ||
-    //        x._1.contains("notice") || x._1.contains("warning") || x._1.contains("warn") || x._1.contains("err") ||
-    //        x._1.contains("crit") || x._1.contains("alert") || x._1.contains("emerg") || x._1.contains("panic"))
-    //        .keyBy(0)
-    //        .timeWindow(Time.seconds(10), Time.seconds(5))
-    //        .sum(1)
-    //        .map(x => "time:" + x._1 + "  count:" + x._2)
-    //    }
+    var window: DataStream[String] = null
+    if (1 <= lev && lev < 2) {
+      window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("info") || x._1.contains("debug") ||
+        x._1.contains("notice") || x._1.contains("warning") || x._1.contains("warn") || x._1.contains("err") ||
+        x._1.contains("crit") || x._1.contains("alert") || x._1.contains("emerg") || x._1.contains("panic"))
+        .keyBy(0)
+        .timeWindow(Time.seconds(10), Time.seconds(5))
+        .sum(1)
+        .map(x => x._1)
+    }
+    else if (2 <= lev && lev < 3) {
+      window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("debug") ||
+        x._1.contains("notice") || x._1.contains("warning") || x._1.contains("warn") || x._1.contains("err") ||
+        x._1.contains("crit") || x._1.contains("alert") || x._1.contains("emerg") || x._1.contains("panic"))
+        .keyBy(0)
+        .timeWindow(Time.seconds(10), Time.seconds(5))
+        .sum(1)
+        .map(x => x._1)
+    } else if (3 <= lev && lev < 4) {
+      window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("notice") || x._1.contains("warning")
+        || x._1.contains("warn") || x._1.contains("err") || x._1.contains("crit") || x._1.contains("alert")
+        || x._1.contains("emerg") || x._1.contains("panic"))
+        .keyBy(0)
+        .timeWindow(Time.seconds(10), Time.seconds(5))
+        .sum(1)
+        .map(x => x._1)
+    } else if (4 <= lev && lev < 5) {
+      window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("warning") || x._1.contains("warn") ||
+        x._1.contains("err") || x._1.contains("crit") || x._1.contains("alert") || x._1.contains("emerg")
+        || x._1.contains("panic"))
+        .keyBy(0)
+        .timeWindow(Time.seconds(10), Time.seconds(5))
+        .sum(1)
+        .map(x => x._1)
+    } else if (5 <= lev && lev < 6) {
+      window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("err") || x._1.contains("crit") ||
+        x._1.contains("alert") || x._1.contains("emerg") || x._1.contains("panic"))
+        .keyBy(0)
+        .timeWindow(Time.seconds(10), Time.seconds(5))
+        .sum(1)
+        .map(x => x._1)
+    } else if (6 <= lev && lev < 7) {
+      window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("crit") || x._1.contains("alert") ||
+        x._1.contains("emerg") || x._1.contains("panic"))
+        .keyBy(0)
+        .timeWindow(Time.seconds(10), Time.seconds(5))
+        .sum(1)
+        .map(x => x._1)
+    } else if (7 <= lev && lev < 8) {
+      window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("alert") || x._1.contains("emerg")
+        || x._1.contains("panic"))
+        .keyBy(0)
+        .timeWindow(Time.seconds(10), Time.seconds(5))
+        .sum(1)
+        .map(x => x._1)
+    } else {
+      window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("emerg") || x._1.contains("panic"))
+        .keyBy(0)
+        .timeWindow(Time.seconds(10), Time.seconds(5))
+        .sum(1)
+        .map(x => x._1)
+    }
 
+    val httpHosts = new java.util.ArrayList[HttpHost]
+    val es_host = conf.get("dtc.es.nodes")
+    if (Utils.isEmpty(es_host)) {
+      throw new DtcException("Es_Host is null!")
+    }
+    val host_es = es_host.split(",")
+    for (x <- host_es) {
+      var ip = x.split(":")(0)
+      var host = x.split(":")(1)
+      httpHosts.add(new HttpHost(ip, host.toInt, "http"))
+    }
 
-    //    if (1 <= lev && lev < 2) {
-    //     window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("info") || x._1.contains("debug") ||
-    //        x._1.contains("notice") || x._1.contains("warning") || x._1.contains("warn") || x._1.contains("err") ||
-    //        x._1.contains("crit") || x._1.contains("alert") || x._1.contains("emerg") || x._1.contains("panic"))
-    //        .keyBy(0)
-    //        .timeWindow(Time.seconds(10), Time.seconds(5))
-    //        .sum(1)
-    //        .map(x => "time:" + x._1 + "  count:" + x._2)
-    //    }else if(2<= lev && lev <3){
-    //      var window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("debug") ||
-    //        x._1.contains("notice") || x._1.contains("warning") || x._1.contains("warn") || x._1.contains("err") ||
-    //        x._1.contains("crit") || x._1.contains("alert") || x._1.contains("emerg") || x._1.contains("panic"))
-    //        .keyBy(0)
-    //        .timeWindow(Time.seconds(10), Time.seconds(5))
-    //        .sum(1)
-    //        .map(x => "time:" + x._1 + "  count:" + x._2)
-    //    }else if(3<=lev && lev <4){
-    //      var window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("notice") || x._1.contains("warning")
-    //        || x._1.contains("warn") || x._1.contains("err") || x._1.contains("crit") || x._1.contains("alert")
-    //        || x._1.contains("emerg") || x._1.contains("panic"))
-    //        .keyBy(0)
-    //        .timeWindow(Time.seconds(10), Time.seconds(5))
-    //        .sum(1)
-    //        .map(x => "time:" + x._1 + "  count:" + x._2)
-    //    }else if(4<=lev && lev <5){
-    //      var window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("warning") || x._1.contains("warn") ||
-    //        x._1.contains("err") || x._1.contains("crit") || x._1.contains("alert") || x._1.contains("emerg")
-    //        || x._1.contains("panic"))
-    //        .keyBy(0)
-    //        .timeWindow(Time.seconds(10), Time.seconds(5))
-    //        .sum(1)
-    //        .map(x => "time:" + x._1 + "  count:" + x._2)
-    //    }else if(5<=lev && lev <6){
-    //      var window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("err") || x._1.contains("crit") ||
-    //        x._1.contains("alert") || x._1.contains("emerg") || x._1.contains("panic"))
-    //        .keyBy(0)
-    //        .timeWindow(Time.seconds(10), Time.seconds(5))
-    //        .sum(1)
-    //        .map(x => "time:" + x._1 + "  count:" + x._2)
-    //    }else if(6<=lev && lev <7){
-    //      var window = waterMarkStream.map(x => (x._1, 1)).filter(x => x._1.contains("crit") || x._1.contains("alert") ||
-    //        x._1.contains("emerg") || x._1.contains("panic"))
-    //        .keyBy(0)
-    //        .timeWindow(Time.seconds(10), Time.seconds(5))
-    //        .sum(1)
-    //        .map(x => "time:" + x._1 + "  count:" + x._2)
-    //    }else if(7<=lev && lev <8){
-    //      var window = waterMarkStream.map(x => (x._1, 1)).filter(x =>x._1.contains("alert") || x._1.contains("emerg")
-    //        || x._1.contains("panic"))
-    //        .keyBy(0)
-    //        .timeWindow(Time.seconds(10), Time.seconds(5))
-    //        .sum(1)
-    //        .map(x => "time:" + x._1 + "  count:" + x._2)
-    //    }else{
-    //      var window = waterMarkStream.map(x => (x._1, 1)).filter(x =>x._1.contains("emerg") || x._1.contains("panic"))
-    //        .keyBy(0)
-    //        .timeWindow(Time.seconds(10), Time.seconds(5))
-    //        .sum(1)
-    //        .map(x => "time:" + x._1 + "  count:" + x._2)
-    //
-    //    }
+    val es_index = conf.get("dtc.es.flink.index.name")
+    val es_type = conf.get("dtc.es.flink.type.name")
+    if (Utils.isEmpty(es_index) || Utils.isEmpty(es_type)) {
+      throw new DtcException("Es_index or type is null!")
+    }
 
-        val httpHosts = new java.util.ArrayList[HttpHost]
-        val es_host = conf.get("dtc.es.nodes")
-        if (Utils.isEmpty(es_host)) {
-          throw new DtcException("Es_Host is null!")
-        }
-        val host_es = es_host.split(",")
-        for (x <- host_es) {
-          var ip = x.split(":")(0)
-          var host = x.split(":")(1)
-          httpHosts.add(new HttpHost(ip, host.toInt, "http"))
-        }
-
-        val es_index = conf.get("dtc.es.flink.index.name")
-        val es_type = conf.get("dtc.es.flink.type.name")
-        if (Utils.isEmpty(es_index) || Utils.isEmpty(es_type)) {
-          throw new DtcException("Es_index or type is null!")
-        }
-    //
-    //
-        def getEsSink(indexName: String, indexType: String): ElasticsearchSink[String] = {
-          //new接口---> 要实现一个方法
-          val esSinkFunc: ElasticsearchSinkFunction[String] = new ElasticsearchSinkFunction[String] {
-            def createIndexRequest(element: String): IndexRequest = {
-              println("------------------------asdgdfsasdfasdfasfdas" + element)
-              return Requests.indexRequest()
-                .index(indexName)
-                .`type`(indexType)
-                .source(element,XContentType.JSON)
-            }
-
-            override def process(element: String, ctx: RuntimeContext, indexer: RequestIndexer): Unit = {
-    //          val indexRequest: IndexRequest = Requests.indexRequest().index(indexName).`type`(indexType).source(element)
-              //                  indexer.add(indexRequest)
-              indexer.add(createIndexRequest(element))
-            }
-          }
-          val esSinkBuilder = new ElasticsearchSink.Builder[String](httpHosts, esSinkFunc)
-          esSinkBuilder.setBulkFlushMaxActions(10)
-          val esSink: ElasticsearchSink[String] = esSinkBuilder.build()
-          esSink
+    def getEsSink(indexName: String, indexType: String): ElasticsearchSink[String] = {
+      val esSinkFunc: ElasticsearchSinkFunction[String] = new ElasticsearchSinkFunction[String] {
+        def createIndexRequest(element: String): IndexRequest = {
+          return Requests.indexRequest()
+            .index(indexName)
+            .`type`(indexType)
+            .source(element, XContentType.JSON)
         }
 
-        val esSink = getEsSink(es_index, es_type)
+        override def process(element: String, ctx: RuntimeContext, indexer: RequestIndexer): Unit = {
+          //          val indexRequest: IndexRequest = Requests.indexRequest().index(indexName).`type`(indexType).source(element,XContentType.JSON)
+          //                  indexer.add(indexRequest)
+          indexer.add(createIndexRequest(element))
+        }
+      }
+      val esSinkBuilder = new ElasticsearchSink.Builder[String](httpHosts, esSinkFunc)
+      esSinkBuilder.setBulkFlushMaxActions(10)
+      val esSink: ElasticsearchSink[String] = esSinkBuilder.build()
+      esSink
+    }
+
+    val esSink = getEsSink(es_index, es_type)
     //            val elasticsearchSink: ElasticsearchSinkFunction[String] = new ElasticsearchSinkFunction[String] {
     //              override def process(element: String, runtimeContext: RuntimeContext, requestIndexer: RequestIndexer): Unit = {
     //                val json = new java.util.HashMap[String, String]
@@ -230,7 +229,7 @@ object StreamingWindowWatermarkScala {
     //    //使用支持仅一次语义的形式
     //    val myProducer = new FlinkKafkaProducer09[String](topic2, new KeyedSerializationSchemaWrapper[String](new SimpleStringSchema()), props, FlinkKafkaProducer09.Semantic.EXACTLY_ONCE)
     //
-        window.addSink(esSink)
+    window.addSink(esSink)
     env.execute("StreamingWindowWatermarkScala")
 
   }
@@ -304,11 +303,6 @@ class MyMapFunction extends MapFunction[String, Tuple2[String, Long]] {
   //    val esSink: ElasticsearchSink[String] = esSinkBuilder.build()
   //    esSink
   //  }
-
-
-
-
-
 
 
   //  def getEsSink(indexName: String): ElasticsearchSink[String] = {

@@ -5,14 +5,14 @@
 <configuration>
 
     <property>
-        <name>flink.kafka.metadata.broker.list</name>
-        <value>10.3.6.7:9092,10.3.6.12:9092,10.3.6.17:9092</value>
+        <name>flink.kafka.broker.list</name>
+        <value>10.3.6.7:9092,10.3.6.12:9092,10.3.6.16:9092</value>
     </property>
     <property>
         <!-- HDFS file pattern for MapReduce input -->
         <name>flink.zookeeper.quorum</name>
         <!--<value>.*\/Razor.*log\.lz4</value>-->
-        <value>10.3.6.7:2181,10.3.6.12:2181,10.3.6.17:2181</value>
+        <value>10.3.6.7:2181,10.3.6.12:2181,10.3.6.16:2181</value>
     </property>
 
     <!-- 将hdfs的数据导入到 hbase的开关-->
