@@ -34,7 +34,7 @@ object WatermarkTest {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 //    val input = env.socketTextStream(hostName, port)
-    val input = env.socketTextStream("127.0.0.1", 9900)
+    val input = env.socketTextStream("localhost", 9900)
     val inputMap = input.map(f => {
       val arr = f.split("\\W+")
       val code = arr(0)

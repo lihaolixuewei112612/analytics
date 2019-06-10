@@ -1,29 +1,17 @@
-//package com.dtc.analytic.scala.demo
+//package com.dtc.analytic.scala.works
 //
-//import java.lang
 //import java.text.SimpleDateFormat
 //import java.util.{Date, Properties}
 //
-//import com.dtc.analytic.scala.common.{DtcConf, LevelEnum, Utils}
-//import com.dtc.analytic.scala.dtcexpection.DtcException
-//import org.apache.flink.api.common.functions.{MapFunction, RuntimeContext}
+//import com.dtc.analytic.scala.common.{DtcConf, LevelEnum}
+//import org.apache.flink.api.common.functions.MapFunction
 //import org.apache.flink.api.common.serialization.SimpleStringSchema
-//import org.apache.flink.api.java.tuple.Tuple
 //import org.apache.flink.streaming.api.TimeCharacteristic
 //import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
-//import org.apache.flink.streaming.api.functions.windowing.WindowFunction
 //import org.apache.flink.streaming.api.scala._
 //import org.apache.flink.streaming.api.watermark.Watermark
 //import org.apache.flink.streaming.api.windowing.time.Time
-//import org.apache.flink.streaming.api.windowing.windows.TimeWindow
-//import org.apache.flink.streaming.connectors.elasticsearch.{ElasticsearchSinkFunction, RequestIndexer}
-//import org.apache.flink.streaming.connectors.elasticsearch6.ElasticsearchSink
 //import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
-//import org.apache.flink.util.Collector
-//import org.apache.http.HttpHost
-//import org.elasticsearch.action.index.IndexRequest
-//import org.elasticsearch.client.Requests
-//import org.elasticsearch.common.xcontent.XContentType
 //
 ///**
 //  * Created on 2019-06-06
@@ -66,7 +54,7 @@
 //    })
 //    val text = env.addSource(myConsumer)
 //    var inputMap = text.map(new MyMapFunction)
-//    var window = inputMap
+//    var window = inputMap.keyBy(0)
 //      .timeWindow(Time.seconds(10), Time.seconds(5))
 //    inputMap.print()
 //    env.execute("StreamingWindowWatermarkScala")
@@ -75,8 +63,8 @@
 //
 //}
 //
-//class MyMapFunction extends MapFunction[String, String] {
-//  override def map(line: String): String= {
+//class MyMapFunction extends MapFunction[String, Tuple2[String, String]] {
+//  override def map(line: String): Tuple2[String, String] = {
 //    var message = ""
 //    if (line.contains("$DTC$")) {
 //      val splitDtc: Array[String] = line.split("\\$DTC\\$")
@@ -91,7 +79,7 @@
 //      message += "\"" + "cause" + "\"" + ":" + "\"" + str.trim + "\"" + "}"
 //      var time1 = event(0).replace("T", " ").split("\\+")(0).replace("-", "/")
 //      var time2 = new Date(time1).getTime
-//      return message
+//      return (event(3).trim, message)
 //    } else {
 //      val event = line.split("\\$\\$")
 //      message += "{" + "\"time\"" + ":" + "\"" + event(0).trim + "\"" + "," + "\"device\"" + ":" + "\"" + event(1).trim +
@@ -99,10 +87,8 @@
 //        "\"" + event(3).trim + "\"" + "," + "\"" + "message" + "\"" + ":" + "\"" + event(4).trim + "\"" + "}"
 //      var time1 = event(0).replace("T", " ").split("\\+")(0).replace("-", "/")
 //      var time2 = new Date(time1).getTime
-//      return  message
+//      return (event(3).trim, message)
 //    }
 //
 //  }
 //}
-//
-//

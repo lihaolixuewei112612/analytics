@@ -2,4 +2,4 @@
  2019-05-30T09:01:01+0800$$cron$$info$$dtc-show02$$ (root) CMD (run-parts /etc/cron.hourly)
  2019-05-30T09:01:01+0800$$cron$$notice$$dtc-show02$$ finished 0anacron
  2019-05-30T09:01:01+0800$$cron$$notice$$dtc-show02$$ finished 0anacron
- 2019-05-30T09:01:01+0800$$cron$$notice$$dtc-show01$$ finished 0anacron
+ 2019-05-30T09:01:01+0800$$cron$$notice$$lixuewei$$ dtcfinished 0anacron

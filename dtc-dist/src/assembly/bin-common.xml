@@ -6,10 +6,19 @@
     <id>bin</id>
 
     <formats>
+        <format>dir</format>
         <format>tar.gz</format>
     </formats>
 
     <baseDirectory>dtc-${project.version}-bin</baseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>lib/common</outputDirectory>
+            <unpack>false</unpack>
+            <useProjectArtifact>false</useProjectArtifact>
+        </dependencySet>
+    </dependencySets>
 
     <fileSets>
         <fileSet>
@@ -21,7 +30,8 @@
                 <exclude>**/.classpath</exclude>
                 <exclude>**/.project</exclude>
                 <exclude>**/.settings/**</exclude>
-                <exclude>lib/**</exclude>
+<!--                <exclude>lib/**</exclude>-->
+                <exclude>**/*.iml</exclude>
                 <!--<exclude>conf/**</exclude>-->
             </excludes>
             <!--加入所需要的文件-->
@@ -32,7 +42,7 @@
                 <include>NOTICE</include>
                 <include>CHANGELOG</include>
                 <include>RELEASE-NOTES</include>
-<!--                <include>bin/**</include>-->
+                <include>bin/**</include>
                 <include>conf/**</include>
                 <include>native/**</include>
             </includes>
@@ -55,6 +65,7 @@
             <outputDirectory>docs</outputDirectory>
         </fileSet>
     </fileSets>
+
 
 
     <moduleSets>
