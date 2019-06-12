@@ -1,6 +1,25 @@
 #!/usr/bin/env bash
-#!/bin/bash -l
 # Don't edit this file unless you know exactly what you're doing.
+
+export PATH=/etc:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/home/dtc/software/java/bin
+if [ -z "${LOG_DIR}" ];then
+    LOG_DIR=/home/dtc/logs
+fi
+export LOG_DIR
+
+if [ -z "${FM_HOME}" ];then
+    FM_HOME=$(cd `dirname $0`;cd ..; pwd)
+fi
+export FM_HOME
+
+if [ -z "${FM_CONF_DIR}" ] || [ ! -d "${FM_CONF_DIR}" ];then
+    FM_CONF_DIR=${FM_HOME}/conf
+fi
+export FM_CONF_DIR
+
+if [ -f ${FM_CONF_DIR}/fm-env.sh ];then
+    source ${FM_CONF_DIR}/fm-env.sh
+fi
 
 run () {
   if [ -f $RUN_PATH/$PID_FILE ]; then
@@ -15,30 +34,15 @@ run () {
   rm -f $RUN_PATH/$PID_FILE
 }
 
-usage="Usage:\n
-$0 <h|d|w|m|t>  \"<date>\"\n
-h\tHourly work, calculate data at previous hour, date format: yyyyMMddHH\n
-d\tDaily work, calculate data on previous day, date format: yyyyMMdd\n
-w\tWeekly work, calculate data in previous week, date format: yyyyMMdd\n
-m\tMonthly work, calculate data in previous month, date format: yyyyMMdd\n
-s\tImport data to HBase from MySQL\n
-t\tTesting work, for developpers, date format depends on actual situation"
-
-if [ $# -lt 2 ]; then
-  echo -e $usage
-  exit 1
-fi
 
 BIN_DIR=$(cd $(dirname $0); pwd)
 . $BIN_DIR/env.sh
 
-CONF_PATH=$RAZOR_MR_HOME/conf:$HADOOP_CONF:$HBASE_CONF
-CLASSPATH="$CONF_PATH:$RAZOR_MR_HOME/lib/*:$HADOOP_CLASSPATH:$HBASE_CLASSPATH:$CLASSPATH"
-LOG_PATH=$RAZOR_MR_HOME/logs
-RUN_PATH=$RAZOR_MR_HOME/run
+LOG_PATH=$ROOT/logs
+RUN_PATH=$ROOT/run
 
 JAVA_OPTS="-Xmx2048m -Xmn256m "
-JAVA=""
+FLINK_SUBMIT='/usr/bin/flink run'
 if [ "$JAVA_HOME" != "" ] ; then
   JAVA=$JAVA_HOME/bin/java
 else
@@ -54,49 +58,17 @@ if [ ! -d $RUN_PATH ];then
   mkdir -p $RUN_PATH
 fi
 
-case $1 in
-  h)
-    CLASS="com.dtc.analytics.works.Hourly"
-    LOG_FILE="hourly.out.$2"
-    PID_FILE="hourly.pid.$2"
-    ;;
-  d)
-    CLASS="com.dtc.analytics.works.Daily"
-    LOG_FILE="daily.out.$2"
-    PID_FILE="daily.pid.$2"
-    ;;
-  *)
-esac
+CLASS="com.dtc.analytic.scala.works.StreamingFlinkScala"
+LOG_FILE="cd-streaming.out"
+PID_FILE="cd-streaming.pid"
 
+CMD="$FLINK_SUBMIT -c $CLASS $FM_HOME/lib/common/dtc-flink-0.1.0.jar
+  --properties-file $ROOT/conf/razor-spark.conf \
+  --class $CLASS --master ${MASTER:-yarn-cluster} \
+  $ROOT/razor-spark-0.1-SNAPSHOT.jar ${@:2}"
+echo -e "$CMD"
+run "$CMD" &
 
-
-# $0 service(master|worker)
-function get_classname_by_service {
-    if [ $# -ne 1 ];then
-        return 1
-    fi
-    local service=$1
-    if [ -z ${service} ];then
-        return 1
-    fi
-    case ${service} in
-      h)
-        echo "com.dtc.analytics.works.Hourly"
-        LOG_FILE="hourly.out.$2"
-        PID_FILE="hourly.pid.$2"
-        return 0
-        ;;
-      d)
-        echo "com.dtc.analytics.works.Daily"
-        LOG_FILE="daily.out.$2"
-        PID_FILE="daily.pid.$2"
-        retrun 0;
-        ;;
-      *)
-        return 2
-        ;;
-esac
-}
 
 
 function main {
@@ -111,21 +83,6 @@ function main {
     shift
     cmd=$1
     shift
-    while getopts :w:f OPTION
-    do
-        case $OPTION in
-            w)
-                waits=$OPTARG
-                ;;
-            f)
-                force="true"
-                ;;
-            \?)
-                usage
-                ;;
-        esac
-    done
-    shift $(($OPTIND - 1))
     case ${cmd} in
         status)
             service_status ${service}
@@ -148,6 +105,7 @@ function main {
             ;;
     esac
 }
-main $@
 
+# main $@ | tee -a ${LOG_DIR}/${service}.out 3>&1 1>&2 2>&3 | tee -a ${LOG_DIR}/${service}.err
+main $@
 

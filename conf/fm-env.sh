@@ -13,15 +13,17 @@ export HADOOP_USER_NAME="dtc"
 export CONF_FILE="conf.properties"
 export PLUGINS_DIRS=${FM_HOME}/plugins
 export NATIVE_DIR=${FM_HOME}/native
-export FM_USER=dtc
+export FM_USER=hadoop
 export LOG_DIR=/home/${FM_USER}/logs
 
 # defaults
 #export EXEC="echo"
 export EXEC="exec"
+export FLINK_SUBMIT='/home/hadoop/software/flink/bin/flink'
 export HOURLY_CLASS=com.dtc.analytics.works.Hourly
+export FLINK_LOG_CLASS=com.dtc.analytic.scala.works.StreamingFlinkScala
 export DAILY_CLASS=com.dtc.analytics.works.Daily
-
+F
 # common
 FM_JAVA_LIBRARY_PATH=${NATIVE_DIR}
 FM_CLASSPATH=${FM_CONF_DIR}:"${FM_HOME}/lib/common/*"
@@ -121,6 +123,25 @@ function start_h {
             -Djava.library.path=${FM_JAVA_LIBRARY_PATH} ${MASTER_OPTS} -cp ${FM_CLASSPATH} ${HOURLY_CLASS} ${FM_CONF_DIR}
     return 0
 }
+
+#function start_flink-log {
+#    echo "enter to submit flink job-------------------"
+#    if ! which java >/dev/null 2>&1 ; then
+#        return 2;
+#    fi
+#    if ! which scala >/dev/null 2>&1 ; then
+#        return 2;
+#    fi
+#    echo "starting to submit flink job-------------------"
+#    ${FLINK_SUBMIT} -c ${FLINK_LOG_CLASS} ${FM_HOME}/lib/common/dtc-flink-0.1.0.jar
+#    local test=$?
+#    echo ${test}
+#    if [ ${test} -ne 0 ];then
+#        echo "submit is failed-------------------!"
+#    else
+#        echo "submit is success-------------------!!"
+#    fi
+#}
 
 # $0 -
 function start_d {

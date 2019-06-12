@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-#
-# Copyright 2017 Suning Inc.
-# Created by Yan Jian on 2017/4/17.
-#
+
 export PATH=/etc:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/home/dtc/software/java/bin
 if [ -z "${LOG_DIR}" ];then
     LOG_DIR=/home/dtc/logs

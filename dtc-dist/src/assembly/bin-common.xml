@@ -12,13 +12,13 @@
 
     <baseDirectory>dtc-${project.version}-bin</baseDirectory>
 
-    <dependencySets>
-        <dependencySet>
-            <outputDirectory>lib/common</outputDirectory>
-            <unpack>false</unpack>
-            <useProjectArtifact>false</useProjectArtifact>
-        </dependencySet>
-    </dependencySets>
+<!--    <dependencySets>-->
+<!--        <dependencySet>-->
+<!--            <outputDirectory>lib/common</outputDirectory>-->
+<!--            <unpack>false</unpack>-->
+<!--            <useProjectArtifact>false</useProjectArtifact>-->
+<!--        </dependencySet>-->
+<!--    </dependencySets>-->
 
     <fileSets>
         <fileSet>
@@ -42,7 +42,7 @@
                 <include>NOTICE</include>
                 <include>CHANGELOG</include>
                 <include>RELEASE-NOTES</include>
-                <include>bin/**</include>
+<!--                <include>bin/**</include>-->
                 <include>conf/**</include>
                 <include>native/**</include>
             </includes>
@@ -66,8 +66,6 @@
         </fileSet>
     </fileSets>
 
-
-
     <moduleSets>
         <moduleSet>
             <includeSubModules>false</includeSubModules>
@@ -86,6 +84,7 @@
                             </excludes>
                         </unpackOptions>
                         <excludes>
+                            <exclude>com.dtc.analytic.scala:**</exclude>
                         </excludes>
                         <fileMode>0777</fileMode>
                         <directoryMode>0755</directoryMode>

@@ -3,9 +3,9 @@
 # Copyright 2017 Suning Inc.
 # Created by Yan Jian on 2017/4/17.
 #
-export PATH=/etc:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/home/dtc/software/java/bin
+export PATH=/etc:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/home/hadoop/software/java/bin
 if [ -z "${LOG_DIR}" ];then
-    LOG_DIR=/home/dtc/logs
+    LOG_DIR=/home/hadoop/logs
 fi
 export LOG_DIR
 
@@ -51,7 +51,6 @@ function get_pid_by_classname {
     local jpid=$(jps -ml | grep ${class_name} | awk '{print $1}' | sed 's/[[:space:]]//g')
     if [ -z "${jpid}" ];then
         local pid=`ps -ef | grep ${class_name} | grep -v grep| awk '{print $2}' | sed 's/[[:space:]]//g'`
-        echo ${pid}
         if [ -z "${pid}" ];then
             return 2
         fi
@@ -63,7 +62,10 @@ function get_pid_by_classname {
 
 # $0 classname 进程号存在：0，不存在：1
 function is_running_by_classname {
+    echo "11111111111111111111"
+    echo $1
     local pid=$(get_pid_by_classname $1)
+    echo "pid is:" ${pid}
     if [ -z "${pid}" ];then
         return 1
     else
@@ -73,12 +75,17 @@ function is_running_by_classname {
 
 # $0 .+
 function wait_for {
+    echo "test--------------11111"
     if [ $# -ne 2 ];then
+        echo "test--------------22222"
         return 1
     fi
+    echo "test--------------33333"
     local condition=$1
     local seconds=$2
     while ! ${condition}; do
+        echo ${condition}
+        echo "test-------------------------"
         ((seconds--)) # always wait when seconds set to 0
         if [ ${seconds} -eq 0 ];then # timed out
             return 2
@@ -111,8 +118,8 @@ function get_classname_by_service {
         return 1
     fi
     case ${service} in
-      h)
-        echo "com.dtc.analytics.works.Hourly"
+      flink-log)
+        echo "com.dtc.analytic.scala.works.StreamingFlinkScala"
         return 0
         ;;
       d)
@@ -127,20 +134,45 @@ esac
 
 # $0 master|worker
 function start_service {
+    echo "enter start_service function..."
     local service=$1
     local classname=`get_classname_by_service ${service}`
+    echo "classname is: "${classname}
     local ret=$?
+    echo "ret is: "${ret}
     if [ ${ret} -ne 0 ];then
         return 1
     fi
     if is_running_by_classname ${classname};then
         return 2
     else
-        local out_file=${LOG_DIR}/fm-${service}.out
+        local out_file=${LOG_DIR}/dtc-${service}.out
         echo -n "[`date +'%F %T'`] " >> ${out_file} 2>&1
-        start_${service} >> ${out_file} 2>&1 &
+        start_${service}
+#        start_${service} >> ${out_file} 2>&1 &
         echo "Launching service ${service}. see ${out_file}"
         return 0
+    fi
+}
+
+function start_flink-log {
+    echo "enter to submit flink job-------------------"
+    if ! which java >/dev/null 2>&1 ; then
+        return 2;
+    fi
+    echo "has java........"
+#    if ! which scala >/dev/null 2>&1 ; then
+#        return 2;
+#    fi
+#    echo "has scala........"
+    echo "starting to submit flink job-------------------"
+    ${FLINK_SUBMIT} run -c ${FLINK_LOG_CLASS} ${FM_HOME}/lib/common/dtc-flink-0.1.0.jar
+    local test=$?
+    echo ${test}
+    if [ ${test} -ne 0 ];then
+        echo "submit is failed-------------------!"
+    else
+        echo "submit is success-------------------!!"
     fi
 }
 
@@ -219,15 +251,15 @@ function start_service_and_wait {
     fi
     if start_service ${service};then
         echo "Starting ${service}..."
-        wait_for "is_running_by_classname ${classname}" ${tries}
-        local ret=$?
-        if [ ${ret} -eq 0 ];then
+#        wait_for "is_running_by_classname ${classname}" ${tries}
+#        local ret=$?
+#        if [ ${ret} -eq 0 ];then
             echo "Start ${service} successfully."
             return 0
-        else
-            echo "Start ${service} failed, timed out." >&2
-            return 3
-        fi
+#        else
+#            echo "Start ${service} failed, timed out." >&2
+#            return 3
+#        fi
     else
         echo "Service ${service} is already running." >&2
         return 2
@@ -276,7 +308,6 @@ function restart_service_and_wait {
 }
 
 function main {
-    # init
     service=
     cmd=
     force=
@@ -326,4 +357,5 @@ function main {
 }
 
 # main $@ | tee -a ${LOG_DIR}/${service}.out 3>&1 1>&2 2>&3 | tee -a ${LOG_DIR}/${service}.err
-main $@
+#main $@
+main flink-log start

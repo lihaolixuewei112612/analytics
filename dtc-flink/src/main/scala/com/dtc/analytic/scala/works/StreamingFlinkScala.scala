@@ -3,7 +3,7 @@ package com.dtc.analytic.scala.works
 import java.text.SimpleDateFormat
 import java.util.{Date, Properties}
 
-import com.dtc.analytic.scala.common.{DtcConf, LevelEnum, Utils}
+import com.dtc.analytic.scala.common.{CountUtils, DtcConf, LevelEnum, Utils}
 import com.dtc.analytic.scala.dtcexpection.DtcException
 import org.apache.flink.api.common.functions.{MapFunction, RuntimeContext}
 import org.apache.flink.api.common.serialization.SimpleStringSchema
@@ -33,7 +33,7 @@ object StreamingFlinkScala {
     val conf = DtcConf.getConf()
     val level = conf.get("log.level")
     val lev: Int = LevelEnum.getIndex(level)
-
+    //    env.registerCachedFile("hdfs://10.3.6.7:9000/user/dtc/flink-connector-elasticsearch-base_2.11-1.6.4.jar", "hdfsFile")
     val brokerList = conf.get("flink.kafka.broker.list")
     val topic = conf.get("flink.kafka.topic")
     val groupId = conf.get("flink.kafka.groupid")
@@ -62,7 +62,8 @@ object StreamingFlinkScala {
     //    })
     val text = env.addSource(myConsumer)
 
-    val inputMap = text.map(new MyMapFunction)
+    val inputMap = text.map(new MyMapFunction).filter(!_.contains("null"))
+    inputMap.print()
     val httpHosts = new java.util.ArrayList[HttpHost]
     val es_host = conf.get("dtc.es.nodes")
     if (Utils.isEmpty(es_host)) {
@@ -81,72 +82,25 @@ object StreamingFlinkScala {
     if (Utils.isEmpty(es_index) || Utils.isEmpty(es_type)) {
       throw new DtcException("Es_index or type is null!")
     }
-
-    def getEsSink(indexName: String, indexType: String): ElasticsearchSink[String] = {
-      val esSinkFunc: ElasticsearchSinkFunction[String] = new ElasticsearchSinkFunction[String] {
-        def createIndexRequest(element: String): IndexRequest = {
-          return Requests.indexRequest()
-            .index(indexName)
-            .`type`(indexType)
-            .source(element, XContentType.JSON)
-        }
-
-        override def process(element: String, ctx: RuntimeContext, indexer: RequestIndexer): Unit = {
-          //          val indexRequest: IndexRequest = Requests.indexRequest().index(indexName).`type`(indexType).source(element,XContentType.JSON)
-          //                  indexer.add(indexRequest)
-          indexer.add(createIndexRequest(element))
-        }
+    var esSink = new ElasticsearchSink.Builder[String](httpHosts, new ElasticsearchSinkFunction[String] {
+      def createIndexRequest(element: String): IndexRequest = {
+        return Requests.indexRequest()
+          .index(es_index)
+          .`type`(es_type)
+          .source(element, XContentType.JSON)
       }
-      val esSinkBuilder = new ElasticsearchSink.Builder[String](httpHosts, esSinkFunc)
-      esSinkBuilder.setBulkFlushMaxActions(10)
-      val esSink: ElasticsearchSink[String] = esSinkBuilder.build()
-      esSink
+
+      override def process(element: String, ctx: RuntimeContext, indexer: RequestIndexer): Unit = {
+        //          val indexRequest: IndexRequest = Requests.indexRequest().index(indexName).`type`(indexType).source(element,XContentType.JSON)
+        //                  indexer.add(indexRequest)
+        indexer.add(createIndexRequest(element))
+      }
     }
+    )
 
-    val esSink = getEsSink(es_index, es_type)
-    //            val elasticsearchSink: ElasticsearchSinkFunction[String] = new ElasticsearchSinkFunction[String] {
-    //              override def process(element: String, runtimeContext: RuntimeContext, requestIndexer: RequestIndexer): Unit = {
-    //                val json = new java.util.HashMap[String, String]
-    //                json.put("data", element)
-    //                val indexRequest: IndexRequest = Requests.indexRequest().index().`type`("_doc").source(json)
-    //                indexer.add(indexRequest)
-    //
-    //                return Requests.indexRequest()
-    //                  .index("my-index")
-    //                  .`type`("my-type")
-    //                  .source(json)
-    //              }
-    //            }
-    //            val esSinkBuilder = new ElasticsearchSink.Builder[String](httpHosts, elasticsearchSink)
-    //
-    //    // configuration for the bulk requests; this instructs the sink to emit after every element, otherwise they would be buffered
-    //    builder.setBulkFlushMaxActions(1)
-    //
-    //    // provide a RestClientFactory for custom configuration on the internally created REST client
-    //    builder.setRestClientFactory(
-    //      restClientBuilder -> {
-    //        restClientBuilder.setDefaultHeaders(
-    //        ...)
-    //        restClientBuilder.setMaxRetryTimeoutMillis(
-    //        ...)
-    //        restClientBuilder.setPathPrefix(
-    //        ...)
-    //        restClientBuilder.setHttpClientConfigCallback(
-    //        ...)
-    //      }
-    //    )
-    //
-    //    // finally, build and add the sink to the job's pipeline
-    //    input.addSink(esSinkBuilder.build)
-    //
-    //    //FlinkKafkaProducer011<String> myProducer = new FlinkKafkaProducer011<>(brokerList, topic, new SimpleStringSchema());
-    //
-    //    //使用支持仅一次语义的形式
-    //    val myProducer = new FlinkKafkaProducer09[String](topic2, new KeyedSerializationSchemaWrapper[String](new SimpleStringSchema()), props, FlinkKafkaProducer09.Semantic.EXACTLY_ONCE)
-    //
-    inputMap.addSink(esSink)
+    esSink.setBulkFlushMaxActions(1)
+    inputMap.addSink(esSink.build())
     env.execute("StreamingWindowWatermarkScala")
-
   }
 
 
@@ -190,14 +144,20 @@ class MyMapFunction extends MapFunction[String, String] {
       message += "\"" + "cause" + "\"" + ":" + "\"" + str.trim + "\"" + "}"
       var time1 = event(0).replace("T", " ").split("\\+")(0).replace("-", "/")
       var time2 = new Date(time1).getTime
+      CountUtils.incrementEventRightCount
       return message
-    } else {
+    } else if (line.contains("$$")) {
       val event = line.split("\\$\\$")
       message += "{" + "\"time\"" + ":" + "\"" + event(0).trim + "\"" + "," + "\"device\"" + ":" + "\"" + event(1).trim +
         "\"" + "," + "\"" + "level" + "\"" + ":" + "\"" + event(2).trim + "\"" + "," + "\"" + "hostname" + "\"" + ":" +
         "\"" + event(3).trim + "\"" + "," + "\"" + "message" + "\"" + ":" + "\"" + event(4).trim + "\"" + "}"
       var time1 = event(0).replace("T", " ").split("\\+")(0).replace("-", "/")
       var time2 = new Date(time1).getTime
+      CountUtils.incrementEventRightCount
+      return message
+    } else {
+      message += "{" + "null" + "}"
+      CountUtils.incrementEventErrorCount
       return message
     }
 
