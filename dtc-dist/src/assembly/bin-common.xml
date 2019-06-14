@@ -64,6 +64,13 @@
             </includes>
             <outputDirectory>docs</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>../dtc-flink/target</directory>
+            <outputDirectory>../lib/common</outputDirectory>
+            <includes>
+                <include>dtc-flink-*-jar-with-dependencies.jar</include>
+            </includes>
+        </fileSet>
     </fileSets>
 
     <moduleSets>
@@ -83,9 +90,6 @@
                                 <exclude>**/LICENSE*</exclude>
                             </excludes>
                         </unpackOptions>
-                        <excludes>
-                            <exclude>com.dtc.analytic.scala:**</exclude>
-                        </excludes>
                         <fileMode>0777</fileMode>
                         <directoryMode>0755</directoryMode>
                     </dependencySet>

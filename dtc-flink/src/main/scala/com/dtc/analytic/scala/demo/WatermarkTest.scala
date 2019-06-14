@@ -28,7 +28,7 @@ object WatermarkTest {
 
 //    val hostName = args(0)
 //    val port = args(1).toInt
-    val hostName = "10.3.0.170"
+    val hostName = "localhost"
     val port = 9999
 
     val env = StreamExecutionEnvironment.getExecutionEnvironment

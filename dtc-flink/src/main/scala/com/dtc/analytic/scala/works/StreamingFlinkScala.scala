@@ -7,7 +7,10 @@ import com.dtc.analytic.scala.common.{CountUtils, DtcConf, LevelEnum, Utils}
 import com.dtc.analytic.scala.dtcexpection.DtcException
 import org.apache.flink.api.common.functions.{MapFunction, RuntimeContext}
 import org.apache.flink.api.common.serialization.SimpleStringSchema
+import org.apache.flink.streaming.api.TimeCharacteristic
+import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
 import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.connectors.elasticsearch.{ElasticsearchSinkFunction, RequestIndexer}
 import org.apache.flink.streaming.connectors.elasticsearch6.ElasticsearchSink
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
@@ -28,39 +31,22 @@ object StreamingFlinkScala {
   def main(args: Array[String]): Unit = {
     DtcConf.setup()
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
-    //    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env.setParallelism(1)
     val conf = DtcConf.getConf()
     val level = conf.get("log.level")
     val lev: Int = LevelEnum.getIndex(level)
-    //    env.registerCachedFile("hdfs://10.3.6.7:9000/user/dtc/flink-connector-elasticsearch-base_2.11-1.6.4.jar", "hdfsFile")
     val brokerList = conf.get("flink.kafka.broker.list")
     val topic = conf.get("flink.kafka.topic")
     val groupId = conf.get("flink.kafka.groupid")
-
 
     val prop = new Properties()
     prop.setProperty("bootstrap.servers", brokerList)
     prop.setProperty("group.id", groupId)
     prop.setProperty("topic", topic)
     val myConsumer = new FlinkKafkaConsumer09[String](topic, new SimpleStringSchema(), prop)
-    //    val waterMarkStream = myConsumer.assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks[(String)] {
-    //      var currentMaxTimestamp = 0L
-    //      var maxOutOfOrderness = 10000L // 最大允许的乱序时间是10s
-    //      val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-    //
-    //      override def extractTimestamp(element: (String), previousElementTimestamp: Long) = {
-    //        val event = element.split("\\$\\$")
-    //        var time1 = event(0).replace("T", " ").split("\\+")(0).replace("-", "/")
-    //        var time2 = new Date(time1).getTime
-    //        currentMaxTimestamp = Math.max(time2, currentMaxTimestamp)
-    //        time2
-    //      }
-    //
-    //      override def getCurrentWatermark = new Watermark(currentMaxTimestamp - maxOutOfOrderness)
-    //
-    //    })
-    val text = env.addSource(myConsumer)
+    val waterMarkStream = myConsumer.assignTimestampsAndWatermarks(new MyPeriodicWatermarks)
+    val text = env.addSource(waterMarkStream)
 
     val inputMap = text.map(new MyMapFunction).filter(!_.contains("null"))
     inputMap.print()
@@ -196,6 +182,27 @@ class MyMapFunction extends MapFunction[String, String] {
 //    val esSink: ElasticsearchSink[String] = esSinkBuilder.build()
 //    esSink
 //  }
+class MyPeriodicWatermarks extends AssignerWithPeriodicWatermarks[String] {
+  var currentMaxTimestamp = 0L
+  var maxOutOfOrderness = 10000L // 最大允许的乱序时间是10s
+  val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+
+  override def extractTimestamp(element: String, previousElementTimestamp: Long) = {
+    val event = element.split("\\$\\$")
+    var time1 = event(0).replace("T", " ").split("\\+")(0).replace("-", "/")
+    var time2 = new Date(time1).getTime
+    currentMaxTimestamp = Math.max(time2, currentMaxTimestamp)
+    time2
+  }
+
+  override def getCurrentWatermark(): Watermark = {
+    return new Watermark(currentMaxTimestamp - maxOutOfOrderness)
+  }
+
+}
+
+
+
 
 
 
