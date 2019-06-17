@@ -1,19 +1,27 @@
 package com.dtc.analytic.scala.works
 
+import java.lang
 import java.text.SimpleDateFormat
+import java.util.concurrent.TimeUnit
 import java.util.{Date, Properties}
 
 import com.dtc.analytic.scala.common.{CountUtils, DtcConf, LevelEnum, Utils}
 import com.dtc.analytic.scala.dtcexpection.DtcException
 import org.apache.flink.api.common.functions.{MapFunction, RuntimeContext}
+import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
+import org.apache.flink.streaming.api.functions.windowing.WindowFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.watermark.Watermark
+import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows
+import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.streaming.connectors.elasticsearch.{ElasticsearchSinkFunction, RequestIndexer}
 import org.apache.flink.streaming.connectors.elasticsearch6.ElasticsearchSink
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
+import org.apache.flink.util.Collector
 import org.apache.http.HttpHost
 import org.elasticsearch.action.index.IndexRequest
 import org.elasticsearch.client.Requests
@@ -32,6 +40,11 @@ object StreamingFlinkScala {
     DtcConf.setup()
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+    import org.apache.flink.streaming.api.CheckpointingMode
+    import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup
+    env.enableCheckpointing(60000)
+    env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
+    env.getCheckpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE)
     env.setParallelism(1)
     val conf = DtcConf.getConf()
     val level = conf.get("log.level")
@@ -49,7 +62,11 @@ object StreamingFlinkScala {
     val text = env.addSource(waterMarkStream)
 
     val inputMap = text.map(new MyMapFunction).filter(!_.contains("null"))
-    inputMap.print()
+    val window = inputMap
+      .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+      .fold(""){(acc,v)=>v}
+      window.print()
+
     val httpHosts = new java.util.ArrayList[HttpHost]
     val es_host = conf.get("dtc.es.nodes")
     if (Utils.isEmpty(es_host)) {
@@ -85,7 +102,7 @@ object StreamingFlinkScala {
     )
 
     esSink.setBulkFlushMaxActions(1)
-    inputMap.addSink(esSink.build())
+    window.addSink(esSink.build())
     env.execute("StreamingWindowWatermarkScala")
   }
 
@@ -200,6 +217,7 @@ class MyPeriodicWatermarks extends AssignerWithPeriodicWatermarks[String] {
   }
 
 }
+
 
 
 
