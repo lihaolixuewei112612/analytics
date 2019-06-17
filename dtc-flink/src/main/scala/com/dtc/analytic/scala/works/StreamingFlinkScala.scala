@@ -62,11 +62,56 @@ object StreamingFlinkScala {
     val text = env.addSource(waterMarkStream)
 
     val inputMap = text.map(new MyMapFunction).filter(!_.contains("null"))
-    val window = inputMap
-      .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
-      .fold(""){(acc,v)=>v}
-      window.print()
-
+    var window: DataStream[String] = null
+    if (1 <= lev && lev < 2) {
+      window = inputMap
+        .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+        .fold("") { (acc, v) => v }
+    } else if (2 <= lev && lev < 3) {
+      window = inputMap
+        .filter(!_.contains("info"))
+        .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+        .fold("") { (acc, v) => v }
+    } else if (3 <= lev && lev < 4) {
+      window = inputMap
+        .filter { x => (!x.contains("info") || (!x.contains("debug"))) }
+        .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+        .fold("") { (acc, v) => v }
+    } else if (4 <= lev && lev < 5) {
+      window = inputMap
+        .filter { x => (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))) }
+        .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+        .fold("") { (acc, v) => v }
+    }else if (5 <= lev && lev < 6) {
+      window = inputMap
+        .filter { x => (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))
+          ||(!x.contains("warning"))||(!x.contains("warn"))) }
+        .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+        .fold("") { (acc, v) => v }
+    }
+    else if (6 <= lev && lev < 7) {
+      window = inputMap
+        .filter { x => (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))
+          ||(!x.contains("warning"))||(!x.contains("warn"))||(!x.contains("err"))) }
+        .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+        .fold("") { (acc, v) => v }
+    }
+    else if (7 <= lev && lev < 8) {
+      window = inputMap
+        .filter { x => (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))
+          ||(!x.contains("warning"))||(!x.contains("warn"))||(!x.contains("err"))||(!x.contains("crit"))) }
+        .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+        .fold("") { (acc, v) => v }
+    }
+    else {
+      window = inputMap
+        .filter { x => (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))
+          ||(!x.contains("warning"))||(!x.contains("warn"))||(!x.contains("err"))||(!x.contains("crit"))
+          ||(!x.contains("alert"))) }
+        .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+        .fold("") { (acc, v) => v }
+    }
+    window.print()
     val httpHosts = new java.util.ArrayList[HttpHost]
     val es_host = conf.get("dtc.es.nodes")
     if (Utils.isEmpty(es_host)) {
