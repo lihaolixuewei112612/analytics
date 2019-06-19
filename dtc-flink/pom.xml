@@ -40,6 +40,10 @@
                     <groupId>commons-logging</groupId>
                     <artifactId>commons-logging</artifactId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>guava</artifactId>
+                    <groupId>com.google.guava</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -107,6 +111,11 @@
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-kafka-0.9_2.11</artifactId>
             <version>${flink.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>14.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>

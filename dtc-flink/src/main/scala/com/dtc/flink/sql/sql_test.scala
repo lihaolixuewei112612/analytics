@@ -1,4 +1,4 @@
-package com.dtc.analytic.scala
+package com.dtc.flink.sql
 
 /**
   * Created on 2019-06-19
@@ -7,8 +7,8 @@ package com.dtc.analytic.scala
   */
 
 import org.apache.flink.api.scala._
-import org.apache.flink.table.api.scala._
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
+import org.apache.flink.table.api.scala._
 import org.apache.flink.table.api.{Table, TableEnvironment}
 
 
