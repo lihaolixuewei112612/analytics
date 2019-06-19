@@ -15,7 +15,6 @@ import java.io.*;
 public class DtcConf {
     private static Logger logger = LoggerFactory.getLogger(DtcConf.class);
     private static Configuration conf = new Configuration();
-    private static int reduceTaskNum = 9;
 
 
     /**
@@ -36,13 +35,10 @@ public class DtcConf {
             } else {
                 throw new IOException("Configure file not found: dtc-mr.xml");
             }
-            reduceTaskNum = conf.getInt("hbase.reduce.tasknum", reduceTaskNum);
-            //      hBaseConn = ConnectionFactory.createConnection(conf);
-            //       Sync HTables from SQL DB
         } catch (FileNotFoundException e) {
-            throw new DtcException(e.getMessage());
-        } catch (IOException e) {
             logger.error("An error was caught", e);
+        } catch (IOException e) {
+            throw new DtcException(e.getMessage());
         } finally {
             try {
                 if (inputStream != null) {
@@ -58,11 +54,4 @@ public class DtcConf {
     public static Configuration getConf() {
         return conf;
     }
-
-
-    public static int getReduceTaskNum() {
-        return reduceTaskNum;
-    }
-
-
 }

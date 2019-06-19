@@ -1,5 +1,6 @@
 package com.dtc.analytics.common;
 
+import com.dtc.analytics.dtcexcepiton.DtcException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
@@ -27,6 +28,9 @@ public class HBaseUtils {
     private static Configuration configuration;
     private static Connection connection;
 
+    /**
+     * 初始化hbase连接
+     */
     private static void init() {
         configuration = HBaseConfiguration.create();
         configuration.set("hbase.zookeeper.property.clientPort", configuration.get("hbase.zookeeper.port"));
@@ -41,28 +45,30 @@ public class HBaseUtils {
     }
 
     //create table
-    public void createTable(Connection conn) throws IOException {
-        Admin admin = conn.getAdmin();
-        System.out.println("[hbaseoperation] start createtable...");
-
-        String tableNameString = "table_book";
-        TableName tableName = TableName.valueOf(tableNameString);
+    public static void createTable(String tName) throws IOException {
+        Admin admin = connection.getAdmin();
+        logger.info("Starting to create table ...");
+        TableName tableName = TableName.valueOf(tName);
         if (admin.tableExists(tableName)) {
-            System.out.println("[INFO] table exist");
+            logger.info("The table {} is exist.", tableName);
         } else {
+            logger.info("The table {} is not exist,and creating it", tableName);
             HTableDescriptor hTableDescriptor = new HTableDescriptor(tableName);
-            hTableDescriptor.addFamily(new HColumnDescriptor("columnfamily_1"));
-            hTableDescriptor.addFamily(new HColumnDescriptor("columnfamily_2"));
-            hTableDescriptor.addFamily(new HColumnDescriptor("columnfamily_3"));
+            hTableDescriptor.addFamily(new HColumnDescriptor("f"));
             admin.createTable(hTableDescriptor);
+            logger.info("The table {} success created", tableName);
         }
-
-        System.out.println("[hbaseoperation] end createtable...");
     }
 
     public static void insterRow(String tableName, String rowkey, String colFamily, String col, String val) {
         logger.info("starting to insert rusult into hbase ...");
         init();
+        try {
+            createTable(tableName);
+        } catch (IOException e) {
+            logger.error("Failed create table,and the cause is {}.", e);
+            throw new DtcException(e.getMessage());
+        }
         Table table = null;
         try {
             table = connection.getTable(TableName.valueOf(tableName));

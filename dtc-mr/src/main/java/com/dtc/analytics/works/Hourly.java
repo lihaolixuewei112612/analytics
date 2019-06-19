@@ -4,6 +4,7 @@ import com.dtc.analytics.common.DtcConf;
 import com.dtc.analytics.common.Formatter;
 //import com.dtc.analytics.common.HBaseUtils;
 import com.dtc.analytics.common.HBaseUtils;
+import com.dtc.analytics.dtcexcepiton.DtcException;
 import com.dtc.analytics.mrthread.HourlyHdfs2EsThread;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -21,11 +22,13 @@ public class Hourly {
     private static Logger logger = LoggerFactory.getLogger(Hourly.class);
 
     public static void main(String[] args) {
-        DtcConf.setup();
+        logger.info("Starting to run worker ...");
         try {
+            DtcConf.setup();
             String prevHour = Formatter.getPrevHour(); // return: yyyyMMddHH
             workID = "Hourly-" + prevHour;
             isSucc = hourlyWork(prevHour, workID);
+            logger.info("Success runing the worker!");
         } catch (IOException e) {
             logger.warn("Hourly worker is failed by in {}.", e);
         } finally {
@@ -33,22 +36,20 @@ public class Hourly {
         }
     }
 
-        private static boolean hourlyWork (String dateHour, String workID) throws IOException {
-            boolean isSucc = false;
-            Configuration conf = DtcConf.getConf();
-            FileSystem fs = null;
+    private static boolean hourlyWork(String dateHour, String workID) throws IOException {
+        boolean isSucc;
+        Configuration conf = DtcConf.getConf();
+        FileSystem fs = FileSystem.get(conf);
+        HourlyHdfs2EsThread hourlyHdfs2EsThread = new HourlyHdfs2EsThread(dateHour, workID, fs);
 
-            fs = FileSystem.get(conf);
-            HourlyHdfs2EsThread hourlyHdfs2EsThread = new HourlyHdfs2EsThread(dateHour, workID, fs);
-
-            try {
-                hourlyHdfs2EsThread.start();
-                hourlyHdfs2EsThread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            fs.close();
-            isSucc = hourlyHdfs2EsThread.isSucc();
-            return isSucc;
+        try {
+            hourlyHdfs2EsThread.start();
+            hourlyHdfs2EsThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+        fs.close();
+        isSucc = hourlyHdfs2EsThread.isSucc();
+        return isSucc;
     }
+}
