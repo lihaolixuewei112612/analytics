@@ -33,10 +33,10 @@ public class HBaseUtils {
      */
     private static void init() {
         configuration = HBaseConfiguration.create();
-        configuration.set("hbase.zookeeper.property.clientPort", configuration.get("hbase.zookeeper.port"));
-        configuration.set("hbase.zookeeper.quorum", configuration.get("hbase.zookeeper.quorum"));
-//        configuration.set("hbase.zookeeper.property.clientPort", "2181");
-//        configuration.set("hbase.zookeeper.quorum", "10.3.6.7,10.3.6.12,10.3.6.16");
+//        configuration.set("hbase.zookeeper.property.clientPort", configuration.get("hbase.zookeeper.port"));
+//        configuration.set("hbase.zookeeper.quorum", configuration.get("hbase.zookeeper.quorum"));
+        configuration.set("hbase.zookeeper.property.clientPort", "2181");
+        configuration.set("hbase.zookeeper.quorum", "10.3.6.7,10.3.6.12,10.3.6.16");
         try {
             connection = ConnectionFactory.createConnection(configuration);
         } catch (IOException e) {
@@ -63,12 +63,12 @@ public class HBaseUtils {
     public static void insterRow(String tableName, String rowkey, String colFamily, String col, String val) {
         logger.info("starting to insert rusult into hbase ...");
         init();
-        try {
-            createTable(tableName);
-        } catch (IOException e) {
-            logger.error("Failed create table,and the cause is {}.", e);
-            throw new DtcException(e.getMessage());
-        }
+//        try {
+////            createTable(tableName);
+//        } catch (IOException e) {
+//            logger.error("Failed create table,and the cause is {}.", e);
+//            throw new DtcException(e.getMessage());
+//        }
         Table table = null;
         try {
             table = connection.getTable(TableName.valueOf(tableName));
@@ -251,6 +251,7 @@ public class HBaseUtils {
 
     // 查看已有表
     public void listTables() throws IOException {
+        init();
         Admin admin = connection.getAdmin();
         HTableDescriptor hTableDescriptors[] = admin.listTables();
         for (HTableDescriptor hTableDescriptor : hTableDescriptors) {
@@ -275,5 +276,8 @@ public class HBaseUtils {
         HBaseUtils.connection = connection;
     }
 
-
+    public static void main(String[] args) throws IOException {
+        HBaseUtils hu = new HBaseUtils();
+        hu.listTables();
+    }
 }

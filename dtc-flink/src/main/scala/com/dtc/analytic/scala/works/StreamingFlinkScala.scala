@@ -1,27 +1,21 @@
 package com.dtc.analytic.scala.works
 
-import java.lang
 import java.text.SimpleDateFormat
-import java.util.concurrent.TimeUnit
 import java.util.{Date, Properties}
 
 import com.dtc.analytic.scala.common.{CountUtils, DtcConf, LevelEnum, Utils}
 import com.dtc.analytic.scala.dtcexpection.DtcException
 import org.apache.flink.api.common.functions.{MapFunction, RuntimeContext}
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
-import org.apache.flink.streaming.api.functions.windowing.WindowFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.streaming.connectors.elasticsearch.{ElasticsearchSinkFunction, RequestIndexer}
 import org.apache.flink.streaming.connectors.elasticsearch6.ElasticsearchSink
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
-import org.apache.flink.util.Collector
 import org.apache.http.HttpHost
 import org.elasticsearch.action.index.IndexRequest
 import org.elasticsearch.client.Requests
@@ -47,8 +41,7 @@ object StreamingFlinkScala {
     env.getCheckpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE)
     env.setParallelism(1)
     val conf = DtcConf.getConf()
-    val level = conf.get("log.level")
-    val lev: Int = LevelEnum.getIndex(level)
+    val level: Int = LevelEnum.getIndex(conf.get("log.level"))
     val brokerList = conf.get("flink.kafka.broker.list")
     val topic = conf.get("flink.kafka.topic")
     val groupId = conf.get("flink.kafka.groupid")
@@ -58,60 +51,67 @@ object StreamingFlinkScala {
     prop.setProperty("group.id", groupId)
     prop.setProperty("topic", topic)
     val myConsumer = new FlinkKafkaConsumer09[String](topic, new SimpleStringSchema(), prop)
-    val waterMarkStream = myConsumer.assignTimestampsAndWatermarks(new MyPeriodicWatermarks)
+    val waterMarkStream = myConsumer.assignTimestampsAndWatermarks(new DTCPeriodicWatermarks)
     val text = env.addSource(waterMarkStream)
 
-    val inputMap = text.map(new MyMapFunction).filter(!_.contains("null"))
+    val inputMap = text.map(new DTCMapFunction).filter(!_.contains("null"))
     var window: DataStream[String] = null
-    if (1 <= lev && lev < 2) {
+    if (1 <= level && level < 2) {
       window = inputMap
         .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
         .fold("") { (acc, v) => v }
-    } else if (2 <= lev && lev < 3) {
+    } else if (2 <= level && level < 3) {
       window = inputMap
         .filter(!_.contains("info"))
         .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
         .fold("") { (acc, v) => v }
-    } else if (3 <= lev && lev < 4) {
+    } else if (3 <= level && level < 4) {
       window = inputMap
         .filter { x => (!x.contains("info") || (!x.contains("debug"))) }
         .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
         .fold("") { (acc, v) => v }
-    } else if (4 <= lev && lev < 5) {
+    } else if (4 <= level && level < 5) {
       window = inputMap
         .filter { x => (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))) }
         .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
         .fold("") { (acc, v) => v }
-    }else if (5 <= lev && lev < 6) {
+    } else if (5 <= level && level < 6) {
       window = inputMap
-        .filter { x => (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))
-          ||(!x.contains("warning"))||(!x.contains("warn"))) }
+        .filter { x =>
+          (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))
+            || (!x.contains("warning")) || (!x.contains("warn")))
+        }
         .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
         .fold("") { (acc, v) => v }
     }
-    else if (6 <= lev && lev < 7) {
+    else if (6 <= level && level < 7) {
       window = inputMap
-        .filter { x => (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))
-          ||(!x.contains("warning"))||(!x.contains("warn"))||(!x.contains("err"))) }
+        .filter { x =>
+          (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))
+            || (!x.contains("warning")) || (!x.contains("warn")) || (!x.contains("err")))
+        }
         .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
         .fold("") { (acc, v) => v }
     }
-    else if (7 <= lev && lev < 8) {
+    else if (7 <= level && level < 8) {
       window = inputMap
-        .filter { x => (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))
-          ||(!x.contains("warning"))||(!x.contains("warn"))||(!x.contains("err"))||(!x.contains("crit"))) }
+        .filter { x =>
+          (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))
+            || (!x.contains("warning")) || (!x.contains("warn")) || (!x.contains("err")) || (!x.contains("crit")))
+        }
         .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
         .fold("") { (acc, v) => v }
     }
     else {
       window = inputMap
-        .filter { x => (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))
-          ||(!x.contains("warning"))||(!x.contains("warn"))||(!x.contains("err"))||(!x.contains("crit"))
-          ||(!x.contains("alert"))) }
+        .filter { x =>
+          (!x.contains("info") || (!x.contains("debug")) || (!x.contains("notice"))
+            || (!x.contains("warning")) || (!x.contains("warn")) || (!x.contains("err")) || (!x.contains("crit"))
+            || (!x.contains("alert")))
+        }
         .windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
         .fold("") { (acc, v) => v }
     }
-    window.print()
     val httpHosts = new java.util.ArrayList[HttpHost]
     val es_host = conf.get("dtc.es.nodes")
     if (Utils.isEmpty(es_host)) {
@@ -119,8 +119,8 @@ object StreamingFlinkScala {
     }
     val host_es = es_host.split(",")
     for (x <- host_es) {
-      var ip = x.split(":")(0)
-      var host = x.split(":")(1)
+      val ip = x.split(":")(0)
+      val host = x.split(":")(1)
       httpHosts.add(new HttpHost(ip, host.toInt, "http"))
     }
 
@@ -158,25 +158,9 @@ object StreamingFlinkScala {
     time
   }
 
-
-  //    def getEsSink(indexName: String,indexType:String): ElasticsearchSink[String] = {
-  //      //new接口---> 要实现一个方法
-  //      val esSinkFunc: ElasticsearchSinkFunction[String] = new ElasticsearchSinkFunction[String] {
-  //        override def process(element: String, ctx: RuntimeContext, indexer: RequestIndexer): Unit = {
-  //          val indexRequest: IndexRequest = Requests.indexRequest().index(indexName).`type`(indexType).source(element)
-  //          indexer.add(indexRequest)
-  //        }
-  //      }
-  //      val esSinkBuilder = new ElasticsearchSink.Builder[String](hostList, esSinkFunc)
-  //      esSinkBuilder.setBulkFlushMaxActions(10)
-  //      val esSink: ElasticsearchSink[String] = esSinkBuilder.build()
-  //      esSink
-  //    }
-
-
 }
 
-class MyMapFunction extends MapFunction[String, String] {
+class DTCMapFunction extends MapFunction[String, String] {
   override def map(line: String): String = {
     var message = ""
     if (line.contains("$DTC$")) {
@@ -227,32 +211,15 @@ class MyMapFunction extends MapFunction[String, String] {
 //    val esSink: ElasticsearchSink[String] = esSinkBuilder.build()
 //    esSink
 //  }
-
-
-//  def getEsSink(indexName: String): ElasticsearchSink[String] = {
-//    //new接口---> 要实现一个方法
-//    val esSinkFunc: ElasticsearchSinkFunction[String] = new ElasticsearchSinkFunction[String] {
-//      override def process(element: String, ctx: RuntimeContext, indexer: RequestIndexer): Unit = {
-//        val json = new java.util.HashMap[String, String]
-//        json.put("data", element)
-//        val indexRequest: IndexRequest = Requests.indexRequest().index(indexName).`type`("_doc").source(json)
-//        indexer.add(indexRequest)
-//      }
-//    }
-//    val esSinkBuilder = new ElasticsearchSink.Builder[String](hostList, esSinkFunc)
-//    esSinkBuilder.setBulkFlushMaxActions(10)
-//    val esSink: ElasticsearchSink[String] = esSinkBuilder.build()
-//    esSink
-//  }
-class MyPeriodicWatermarks extends AssignerWithPeriodicWatermarks[String] {
+class DTCPeriodicWatermarks extends AssignerWithPeriodicWatermarks[String] {
   var currentMaxTimestamp = 0L
   var maxOutOfOrderness = 10000L // 最大允许的乱序时间是10s
   val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
   override def extractTimestamp(element: String, previousElementTimestamp: Long) = {
     val event = element.split("\\$\\$")
-    var time1 = event(0).replace("T", " ").split("\\+")(0).replace("-", "/")
-    var time2 = new Date(time1).getTime
+    val time1 = event(0).replace("T", " ").split("\\+")(0).replace("-", "/")
+    val time2 = new Date(time1).getTime
     currentMaxTimestamp = Math.max(time2, currentMaxTimestamp)
     time2
   }
