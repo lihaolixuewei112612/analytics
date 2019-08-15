@@ -1,8 +1,8 @@
-{"labels":{"__name__":"linux_prometheus_tsdb_compaction_chunk_size_bytes_bucket","instance":"localhost:9090","job":"prometheus","le":"162"},"name":"linux_a","timestamp":"2019-07-22T03:55:36Z","value":"20"}
-{"labels":{"__name__":"linux_prometheus_tsdb_compaction_chunk_size_bytes_bucket","instance":"localhost:9090","job":"prometheus","le":"243"},"name":"linux_b","timestamp":"2019-07-22T03:55:36Z","value":"6"}
-{"labels":{"__name__":"linux_prometheus_tsdb_compaction_chunk_size_bytes_bucket","instance":"localhost:9090","job":"prometheus","le":"364.5"},"name":"linux_c","timestamp":"2019-07-22T03:55:36Z","value":"9"}
-{"labels":{"__name__":"linux_prometheus_tsdb_compaction_chunk_size_bytes_bucket","instance":"localhost:9090","job":"prometheus","le":"1230.1875"},"name":"linux_d","timestamp":"2019-07-22T03:55:36Z","value":"5"}
-{"labels":{"__name__":"linux_prometheus_tsdb_compaction_chunk_size_bytes_sum","instance":"localhost:9090","job":"prometheus"},"name":"linux_e","timestamp":"2019-07-22T03:55:36Z","value":"7"}
+{"labels":{"__name__":"linux_prometheus_tsdb_compaction_chunk_size_bytes_bucket","instance":"localhost:9090","job":"prometheus","le":"162"},"name":"node_a","timestamp":"2019-07-22T03:55:36Z","value":"20"}
+{"labels":{"__name__":"linux_prometheus_tsdb_compaction_chunk_size_bytes_bucket","instance":"localhost:9090","job":"prometheus","le":"243"},"name":"node_b","timestamp":"2019-07-22T03:55:36Z","value":"6"}
+{"labels":{"__name__":"linux_prometheus_tsdb_compaction_chunk_size_bytes_bucket","instance":"localhost:9090","job":"prometheus","le":"364.5"},"name":"node_c","timestamp":"2019-07-22T03:55:36Z","value":"9"}
+{"labels":{"__name__":"linux_prometheus_tsdb_compaction_chunk_size_bytes_bucket","instance":"localhost:9090","job":"prometheus","le":"1230.1875"},"name":"node_d","timestamp":"2019-07-22T03:55:36Z","value":"5"}
+{"labels":{"__name__":"linux_prometheus_tsdb_compaction_chunk_size_bytes_sum","instance":"localhost:9090","job":"prometheus"},"name":"node_e","timestamp":"2019-07-22T03:55:36Z","value":"7"}
 {"labels":{"__name__":"windows_prometheus_tsdb_compaction_duration_seconds_bucket","instance":"localhost:9091","job":"prometheus","le":"1"},"name":"mysql_a","timestamp":"2019-07-22T03:55:36Z","value":"8"}
 {"labels":{"__name__":"windows_prometheus_tsdb_compaction_duration_seconds_bucket","instance":"localhost:9091","job":"prometheus","le":"4"},"name":"mysql_b","timestamp":"2019-07-22T03:55:36Z","value":"5"}
 {"labels":{"__name__":"windows_prometheus_tsdb_compaction_duration_seconds_bucket","instance":"localhost:9091","job":"prometheus","le":"16"},"name":"mysql_c","timestamp":"2019-07-22T03:55:36Z","value":"7"}
