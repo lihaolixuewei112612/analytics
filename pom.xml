@@ -20,7 +20,7 @@
         <log4j.version>2.7</log4j.version>
         <junit.version>4.11</junit.version>
         <elasticsearch.version>6.7.1</elasticsearch.version>
-        <jackson.version>2.9.9</jackson.version>
+        <jackson.version>2.11.0</jackson.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <flink.version>1.6.4</flink.version>
         <scala.version>2.11.4</scala.version>
